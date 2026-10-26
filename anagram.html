@@ -188,24 +188,30 @@
       </div>
       <a href="./index.html" class="shrink-0 rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-700 hover:text-white">All apps</a>
     </div>
-      <!-- Live Tile Status Bar -->
-      <div class="flex w-full items-center gap-2">
-        <div class="flex flex-1 items-center justify-around gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs">
+    <!-- Live Tile Status Bar -->
+    <div class="flex w-full items-center gap-2">
+      <div class="flex flex-1 items-center justify-around gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs">
+        <span class="flex items-center gap-1.5">
           <span class="text-slate-400">Total:</span>
           <span id="statTotal" class="font-mono font-semibold text-slate-200">0</span>
-          <span class="text-slate-600 px-1">•</span>
+        </span>
+        <span class="text-slate-600">•</span>
+        <span class="flex items-center gap-1.5">
           <span class="text-indigo-400">Free:</span>
           <span id="statFree" class="font-mono font-semibold text-indigo-300">0</span>
-          <span class="text-slate-600 px-1">•</span>
+        </span>
+        <span class="text-slate-600">•</span>
+        <span class="flex items-center gap-1.5">
           <span class="text-emerald-400">Words:</span>
           <span id="statWords" class="font-mono font-semibold text-emerald-300">0</span>
-        </div>
+        </span>
+      </div>
 
-        <!-- Hint Button (? Icon) -->
-        <button id="hintToggleBtn" title="Show Longest Word Suggestions (?)" aria-label="Toggle word hints" aria-controls="hintShelf" aria-expanded="false" class="relative flex shrink-0 items-center justify-center w-8 h-8 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 transition active:scale-95 shadow-sm">
-          <i data-lucide="help-circle" class="w-4 h-4"></i>
-          <span id="hintBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center hidden">0</span>
-        </button>
+      <!-- Hint Button (? Icon) -->
+      <button id="hintToggleBtn" title="Show Longest Word Suggestions (?)" aria-label="Toggle word hints" aria-controls="hintShelf" aria-expanded="false" class="relative flex shrink-0 items-center justify-center w-8 h-8 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 transition active:scale-95 shadow-sm">
+        <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <span id="hintBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center hidden">0</span>
+      </button>
     </div>
 
     <!-- Letter Input & Toolbar -->
