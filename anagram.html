@@ -178,19 +178,8 @@
 
   <!-- Top Navigation & Control Command Bar -->
   <header class="w-full max-w-6xl mx-auto px-4 pt-3 pb-2 flex flex-col gap-2.5 z-30">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-          <i data-lucide="sparkles" class="w-4 h-4"></i>
-        </div>
-        <div>
-          <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
-            Anagram Studio
-          </h1>
-          <p class="text-[11px] text-slate-400">Drag & snap cards into words • Pull vertically or click &times; to break apart</p>
-        </div>
-      </div>
-
+    <div class="flex flex-col items-center gap-2">
+      <h1 class="text-base font-bold tracking-tight text-white">Anagram Studio</h1>
       <!-- Live Tile Status Bar -->
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs">
@@ -337,6 +326,7 @@
     </div>
   </footer>
 
+  <script src="./dictionary.js"></script>
   <script>
     lucide.createIcons();
 
@@ -425,84 +415,12 @@
 
     const sound = new MinimalAudio();
 
-    /* ============================================================
-       COMPREHENSIVE EMBEDDED DICTIONARY
-       Covers high frequency anagram combinations & English vocabulary
-       ============================================================ */
-    const RAW_WORDS = [
-      // 10+ letters
-      "EXPERIENCE","DISCOVERY","CREATIVITY","INTELLIGENCE","WONDERFUL","CHARACTER","COMMUNITY","BEAUTIFUL","KNOWLEDGE","CONFIDENCE",
-      "CELEBRATE","IMPORTANT","PERFECTION","CONNECTION","CHALLENGE","ADVENTURE","DISCOVERY","FRIENDSHIP","BEAUTIFUL","INVENTIONS",
-      // 8-9 letters
-      "CREATIVE","REACTIVE","REACTION","CREATION","RESONATE","RESTORING","STARTING","TRAINING","PAINTING","MOUNTAIN","FOUNTAIN",
-      "HOSPITAL","PRACTICE","BUILDING","CUSTOMER","LANGUAGE","QUESTION","COMPUTER","SOFTWARE","HARDWARE","SECURITY","STRATEGY",
-      "SOLUTION","PLATFORM","LEARNING","TEACHERS","STUDENTS","RESEARCH","DISCOVER","CALENDAR","TOGETHER","BUSINESS","FORECAST",
-      "DELIVERY","POSITION","MOVEMENT","MATERIAL","THINKING","GARDENER","PLEASURE","SURPRISE","ACCIDENT","ABSOLUTE","STRONGER",
-      // 7 letters
-      "SILENT","LISTEN","TINSEL","ENLIST","INLETS","RELATED","ALTERED","TREADLE","GARDEN","DANGER","GANDER","RANGED","STREAM",
-      "MASTER","TAMERS","FLOWER","FOWLER","WOLFER","RESCUE","SECURE","RECUSE","POETRY","STOREY","OYSTER","POINTER","PROTEIN",
-      "PAINTER","REPAINT","CURTAIN","TRAINER","WEATHER","CENTRAL","SCIENCE","PRODUCT","NETWORK","PROGRAM","PROJECT","MACHINE",
-      "ACCOUNT","SERVICE","SUPPORT","PARTNER","JOURNEY","MORNING","EVENING","TONIGHT","WEEKEND","SUCCESS","VICTORY","FREEDOM",
-      "JUSTICE","BALANCE","COURAGE","PATIENT","HEALTHY","NATURAL","ORGANIC","CAPTURE","REFLECT","PROMISE","ACHIEVE","IMAGINE",
-      "INSPIRE","EXPLORE","COMMAND","CONTROL","SPECIAL","PRIMARY","VIRTUAL","DIGITAL","GENUINE","PERFECT","DYNAMIC","CURRENT",
-      // 6 letters
-      "LISTEN","SILENT","ENLIST","INLETS","TINSEL","STONE","TONES","NOTES","ONSET","STARE","TARES","RATES","ASTER","TEARS",
-      "CRATE","TRACE","REACT","CATER","ACTOR","CREST","STEER","RESET","TERSE","ENTER","DETAIL","DILATE","TAILED","SWORD",
-      "WORDS","HORSE","SHORE","CLONE","BRAIN","TRAIN","PAINT","POINT","SPAIN","PIANO","MUSIC","CLEAR","SCALE","SPEAR",
-      "SPARE","PEARS","REAPS","PRONE","POWER","ROPES","SPORE","PROSE","OPENS","BREAD","BEARD","ALERT","ALTER","LATER",
-      "TREAD","RATED","STREET","TESTER","SHINE","SMILE","PLANET","SILVER","GOLDEN","SPRING","SUMMER","WINTER","AUTUMN",
-      "MOTHER","FATHER","SISTER","BROTHER","DOCTOR","WRITER","ARTIST","NATURE","PERSON","MEMBER","SYSTEM","FUTURE","ENERGY",
-      "RECORD","POLICY","MARKET","DESIGN","SIMPLE","FLIGHT","CAMERA","ISLAND","FOREST","VALLEY","PALACE","CASTLE","PRINCE",
-      // 5 letters
-      "APPLE","BEACH","CHAIR","DANCE","EAGLE","FLAME","GRAPE","HOUSE","IMAGE","JUICE","KNIFE","LEMON","MANGO","NIGHT","OCEAN",
-      "PAPER","QUEEN","RIVER","STORM","TABLE","WATER","WHITE","BLACK","GREEN","ROUND","SMART","GREAT","LIGHT","SOUND","SPACE",
-      "WORLD","EARTH","HEART","HATER","SHARE","SHEAR","TEAR","RATE","TARE","MEAT","TEAM","MATE","TAME","TIME","EMIT","ITEM",
-      "MITE","LIVE","EVIL","VILE","VEIL","LEAD","DEAL","DALE","LADE","CARE","RACE","ACRE","READ","DEAR","DARE","SAID","PAID",
-      "GUIDE","STAGE","FAITH","TRUTH","PEACE","DREAM","GLORY","YOUTH","PRIDE","CROWN","SPARK","SHINE","CLOCK","TOWER","BRIDGE",
-      // 4 letters
-      "ABLE","ACID","AGED","ALSO","AREA","ARMY","AWAY","BABY","BACK","BALL","BAND","BANK","BASE","BATH","BEAR","BEAT","BEEN",
-      "BEER","BELL","BELT","BEST","BIRD","BLOW","BLUE","BOAT","BODY","BOND","BONE","BOOK","BOOM","BORN","BOSS","BOTH","BOWL",
-      "BULK","BURN","BUSH","BUSY","CALL","CALM","CAME","CAMP","CARD","CARE","CASE","CASH","CAST","CELL","CHAT","CHIP","CITY",
-      "CLUB","COAL","COAT","CODE","COLD","COME","COOK","COOL","COPE","CORE","COST","CREW","CROP","DARK","DATA","DATE","DAWN",
-      "DAYS","DEAD","DEAL","DEAN","DEAR","DEBT","DEEP","DENY","DESK","DIAL","DIET","DISC","DISK","DOES","DONE","DOOR","DOSE",
-      "DOWN","DRAW","DREW","DROP","DRUG","DUAL","DUKE","DUST","DUTY","EACH","EARN","EASE","EAST","EASY","EDGE","ELSE","EVEN",
-      "EVER","FACE","FACT","FAIR","FALL","FARM","FAST","FATE","FEAR","FEED","FEEL","FEET","FELL","FILE","FILL","FILM","FIND",
-      "FINE","FIRE","FIRM","FISH","FIVE","FLAT","FLOW","FOOD","FOOT","FORD","FORM","FORT","FOUR","FREE","FROM","FULL","FUND",
-      "GAME","GANG","GATE","GAVE","GEAR","GENE","GIFT","GIRL","GIVE","GLAD","GOAL","GOES","GOLD","GOLF","GONE","GOOD","GRAY",
-      "GREW","GROW","GULF","HAIR","HALF","HALL","HAND","HANG","HARD","HARM","HATE","HAVE","HEAD","HEAR","HEAT","HELD","HELL",
-      "HELP","HERO","HIGH","HILL","HIRE","HOLD","HOLE","HOLY","HOME","HOPE","HOST","HOUR","HUGE","HUNG","HUNT","HURT","IDEA",
-      "INCH","INTO","IRON","ITEM","JOIN","JUMP","JURY","JUST","KEEP","KEPT","KICK","KILL","KIND","KING","KNEE","KNEW","KNOW",
-      "LACK","LADY","LAID","LAKE","LAND","LANE","LAST","LATE","LEAD","LEFT","LESS","LIFE","LIFT","LIKE","LINE","LINK","LION",
-      "LIST","LIVE","LOAD","LOAN","LOCK","LOGO","LONG","LOOK","LORD","LOSE","LOSS","LOST","LOVE","LUCK","MADE","MAIL","MAIN",
-      "MAKE","MALE","MANY","MARK","MASS","MEAL","MEAN","MEAT","MEET","MENU","MERE","MIKE","MILE","MILK","MILL","MIND","MINE",
-      "MISS","MODE","MOOD","MOON","MORE","MOST","MOVE","MUCH","MUST","NAME","NAVY","NEAR","NECK","NEED","NEWS","NEXT","NICE",
-      "NINE","NONE","NOSE","NOTE","OKAY","ONCE","ONLY","OPEN","ORAL","OVER","PACE","PACK","PAGE","PAID","PAIN","PAIR","PALM",
-      "PARK","PART","PASS","PAST","PATH","PEAK","PICK","PILE","PINK","PIPE","PLAN","PLAY","PLOT","PLUG","PLUS","POEM","POET",
-      "POLL","POOL","POOR","PORT","POST","PULL","PURE","PUSH","RACE","RAIL","RAIN","RANK","RARE","RATE","READ","REAL","REAR",
-      "RELY","RENT","REST","RICE","RICH","RIDE","RING","RISE","RISK","ROAD","ROCK","ROLE","ROLL","ROOF","ROOM","ROOT","ROSE",
-      "RULE","RUSH","SAFE","SAID","SAKE","SALE","SALT","SAME","SAND","SAVE","SEAT","SEED","SEEK","SEEM","SEEN","SELF","SELL",
-      "SEND","SENT","SHIP","SHOP","SHOT","SHOW","SHUT","SICK","SIDE","SIGN","SITE","SIZE","SKIN","SLIP","SLOW","SNOW","SOFT",
-      "SOIL","SOLD","SOLE","SOME","SONG","SOON","SORT","SOUL","SPOT","STAR","STAY","STEP","STOP","SUCH","SUIT","SURE","TAKE",
-      "TALE","TALK","TALL","TANK","TAPE","TASK","TEAM","TELL","TEND","TERM","TEST","TEXT","THAN","THAT","THEM","THEN","THEY",
-      "THIN","THIS","THUS","TILL","TIME","TINY","TOLD","TOLL","TONE","TOOK","TOOL","TOUR","TOWN","TREE","TRIP","TRUE","TUNE",
-      "TURN","TWIN","TYPE","UNIT","UPON","USED","USER","VARY","VAST","VERY","VICE","VIEW","VOTE","WAGE","WAIT","WAKE","WALK",
-      "WALL","WANT","WARD","WARM","WASH","WAVE","WAYS","WEAK","WEAR","WEEK","WELL","WENT","WERE","WEST","WHAT","WHEN","WHOM",
-      "WIDE","WIFE","WILD","WILL","WIND","WINE","WING","WINS","WIRE","WISE","WISH","WITH","WOOD","WORD","WORE","WORK","YARD",
-      "YEAR","ZERO","ZONE",
-      // 3 letters
-      "ACT","ADD","AGE","AGO","AID","AIM","AIR","ALL","AND","ANY","APE","ARM","ART","ASK","BAD","BAG","BAR","BAT","BAY","BED",
-      "BEE","BET","BIG","BIT","BOY","BOX","BUS","BUT","BUY","CAN","CAP","CAR","CAT","COW","CRY","CUP","CUT","DAY","DIE","DIG",
-      "DOG","DOT","DRY","DUE","EAR","EAT","EGG","END","EYE","FAN","FAR","FAT","FEW","FIT","FLY","FOG","FOR","FOX","FUN","GAP",
-      "GAS","GET","GOD","GUN","GUY","HAT","HIT","HOT","ICE","ILL","INK","INN","JAW","JOY","KEY","KID","LAB","LAW","LAY","LEG",
-      "LET","LID","LIE","LIP","LOG","LOW","MAN","MAP","MAT","MAY","MEN","MIX","MUD","NET","NEW","NOD","NOT","NOW","NUT","OAK",
-      "ODD","OFF","OIL","OLD","ONE","OUR","OUT","OWL","PAN","PAY","PEN","PET","PIG","PIN","PIT","POT","RAW","RED","RIB","ROD",
-      "ROW","RUN","SAD","SAW","SAY","SEA","SET","SEW","SHE","SIT","SIX","SKI","SKY","SON","SPY","SUN","TAX","TEA","TEN","THE",
-      "TIE","TIN","TIP","TOE","TOP","TOY","TRY","TWO","USE","VAN","WAR","WAY","WET","WHO","WHY","WIN","YES","YET","ZOO"
-    ];
-
-    // Deduplicate & uppercase dictionary
-    const DICTIONARY = Array.from(new Set(RAW_WORDS.map(w => w.toUpperCase())));
-    document.getElementById('dictStats').textContent = `${DICTIONARY.length.toLocaleString()} words loaded`;
+    const DICTIONARY = new Set(window.DICTIONARY_WORDS || []);
+    const WORDS_BY_LENGTH = [];
+    for (const word of DICTIONARY) {
+      (WORDS_BY_LENGTH[word.length] ||= []).push(word);
+    }
+    document.getElementById('dictStats').textContent = `${DICTIONARY.size.toLocaleString()} words loaded`;
 
     /* ============================================================
        APPLICATION & TILE ENGINE STATE
@@ -896,23 +814,24 @@
       const validMatches = [];
       const maxLen = unjoinedTiles.length;
 
-      for (const word of DICTIONARY) {
-        if (word.length > maxLen) continue;
-        if (word.length < 3 && maxLen >= 3) continue; // favor 3+ letter words when available
+      const firstLength = maxLen >= 3 ? 3 : 1;
+      for (let length = firstLength; length <= maxLen; length++) {
+        for (const word of WORDS_BY_LENGTH[length] || []) {
 
-        const neededCounts = {};
-        let canForm = true;
+          const neededCounts = {};
+          let canForm = true;
 
-        for (const char of word) {
-          neededCounts[char] = (neededCounts[char] || 0) + 1;
-          if (!availableCounts[char] || neededCounts[char] > availableCounts[char]) {
-            canForm = false;
-            break;
+          for (const char of word) {
+            neededCounts[char] = (neededCounts[char] || 0) + 1;
+            if (!availableCounts[char] || neededCounts[char] > availableCounts[char]) {
+              canForm = false;
+              break;
+            }
           }
-        }
 
-        if (canForm) {
-          validMatches.push({ word, length: word.length });
+          if (canForm) {
+            validMatches.push({ word, length: word.length });
+          }
         }
       }
 
@@ -1090,7 +1009,7 @@
 
       groups.forEach(group => {
         const text = group.map(t => t.char).join('');
-        const isValid = DICTIONARY.includes(text);
+        const isValid = DICTIONARY.has(text);
 
         const badge = document.createElement('div');
         badge.className = `px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wider flex items-center gap-1.5 backdrop-blur-md shadow-md border ${
