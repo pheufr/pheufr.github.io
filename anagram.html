@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0b0f19" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
   <title>Anagram Studio — Intelligent Anagram Solver</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./theme.js"></script>
+  <link rel="stylesheet" href="./theme.css">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,180 +17,17 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <style>
-    :root {
-      --tile-size: 54px;
-    }
-    @media (max-width: 640px) {
-      :root {
-        --tile-size: 44px;
-      }
-    }
-
-    body {
-      height: 100vh;
-      height: 100dvh;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      background-color: #0b0f19;
-    }
-
-    /* Minimalist Dot Grid Board */
-    .workspace-canvas {
-      background-color: #0d1322;
-      background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1.25px, transparent 1.25px);
-      background-size: 24px 24px;
-    }
-
-    /* Modern Card Letter Tiles */
-    .letter-tile {
-      width: var(--tile-size);
-      height: var(--tile-size);
-      position: absolute;
-      border-radius: 12px;
-      cursor: grab;
-      touch-action: none;
-      background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      box-shadow: 
-        0 4px 14px -2px rgba(0, 0, 0, 0.5),
-        0 2px 4px -1px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-sizing: border-box;
-      will-change: transform;
-      transition: box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease;
-    }
-
-    .letter-tile:hover {
-      border-color: rgba(99, 102, 241, 0.7);
-      box-shadow: 
-        0 8px 20px -3px rgba(0, 0, 0, 0.55),
-        0 0 0 1px rgba(99, 102, 241, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-
-    .letter-tile:active, .letter-tile.dragging {
-      cursor: grabbing;
-      filter: brightness(1.12);
-      border-color: #818cf8;
-      box-shadow: 
-        0 16px 32px -4px rgba(0, 0, 0, 0.7),
-        0 0 0 2px rgba(99, 102, 241, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      z-index: 999 !important;
-    }
-
-    .tile-char {
-      font-weight: 700;
-      font-size: calc(var(--tile-size) * 0.46);
-      color: #f8fafc;
-      letter-spacing: -0.02em;
-      pointer-events: none;
-      line-height: 1;
-    }
-
-    /* Seamless group connection aesthetic */
-    .letter-tile.in-group {
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-      border-color: rgba(99, 102, 241, 0.4);
-    }
-
-    .letter-tile.connected-left {
-      border-top-left-radius: 3px;
-      border-bottom-left-radius: 3px;
-      border-left-color: rgba(148, 163, 184, 0.1);
-    }
-    .letter-tile.connected-right {
-      border-top-right-radius: 3px;
-      border-bottom-right-radius: 3px;
-      border-right-color: rgba(148, 163, 184, 0.1);
-    }
-
-    /* Minimalist Detach pill on hover/focus */
-    .detach-handle {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      width: 18px;
-      height: 18px;
-      background: #1e293b;
-      color: #94a3b8;
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 9999px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      opacity: 0;
-      transform: scale(0.8);
-      transition: all 0.15s ease;
-      cursor: pointer;
-      z-index: 25;
-    }
-    .detach-handle:hover {
-      background: #ef4444;
-      color: #ffffff;
-      border-color: #ef4444;
-      transform: scale(1.1);
-    }
-    .letter-tile.in-group:hover .detach-handle {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    /* Smooth shelf transition */
-    #hintShelf {
-      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
-    }
-    #hintShelf.shelf-hidden {
-      transform: translateY(115%);
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
-    }
-
-    /* Snap Pulse Animation */
-    @keyframes snapGlow {
-      0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
-      70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-    }
-    .snap-pulse {
-      animation: snapGlow 0.45s ease-out;
-    }
-
-    /* Custom sleek scrollbar */
-    ::-webkit-scrollbar {
-      height: 6px;
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.25);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(148, 163, 184, 0.4);
-    }
-  </style>
 </head>
-<body class="text-slate-100 flex flex-col overflow-hidden">
+<body class="anagram text-slate-100 flex flex-col overflow-hidden">
 
   <!-- Top Navigation & Control Command Bar -->
   <header class="w-full px-4 pt-3 pb-2 flex flex-col gap-2.5 shrink-0 z-30">
     <div class="flex items-center justify-between gap-4">
       <div>
         <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-400">pheufr.github.io</p>
-        <h1 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">Anagram Studio</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-heading sm:text-3xl">Anagram Studio</h1>
       </div>
-      <a href="./index.html" class="shrink-0 rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-700 hover:text-white">All apps</a>
+      <a href="./index.html" class="shrink-0 rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-700 hover:text-heading">All apps</a>
     </div>
     <!-- Live Tile Status Bar -->
     <div class="flex w-full items-center gap-2">
@@ -238,15 +79,15 @@
           <span>Add</span>
         </button>
 
-        <button id="shuffleBtn" title="Shuffle Tiles" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-white transition active:scale-95 flex items-center justify-center">
+        <button id="shuffleBtn" title="Shuffle Tiles" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-heading transition active:scale-95 flex items-center justify-center">
           <i data-lucide="shuffle" class="w-4 h-4"></i>
         </button>
 
-        <button id="arrangeBtn" title="Organize into Neat Rows" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-white transition active:scale-95 flex items-center justify-center">
+        <button id="arrangeBtn" title="Organize into Neat Rows" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-heading transition active:scale-95 flex items-center justify-center">
           <i data-lucide="layout-grid" class="w-4 h-4"></i>
         </button>
 
-        <button id="splitAllBtn" title="Split All Joined Tiles (Break Groups)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-white transition active:scale-95 flex items-center justify-center">
+        <button id="splitAllBtn" title="Split All Joined Tiles (Break Groups)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-heading transition active:scale-95 flex items-center justify-center">
           <i data-lucide="scissors" class="w-4 h-4"></i>
         </button>
 
@@ -309,7 +150,7 @@
             <span class="text-xs font-semibold text-slate-200">Longest Words from Unjoined Letters</span>
             <span id="shelfSummary" class="text-[11px] text-slate-400 font-mono">0 found</span>
           </div>
-          <button id="closeShelfBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <button id="closeShelfBtn" class="text-slate-400 hover:text-heading p-1 rounded-lg hover:bg-slate-800 transition">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
@@ -896,7 +737,7 @@
 
         btn.innerHTML = `
           <div class="flex items-center gap-1.5">
-            <span class="font-bold text-xs tracking-wider ${isLongest ? 'text-indigo-300 group-hover:text-white' : 'text-slate-200 group-hover:text-indigo-200'}">${item.word}</span>
+            <span class="font-bold text-xs tracking-wider ${isLongest ? 'text-indigo-300 group-hover:text-heading' : 'text-slate-200 group-hover:text-indigo-200'}">${item.word}</span>
             <span class="text-[10px] font-mono px-1.5 py-0.2 rounded ${isLongest ? 'bg-indigo-500/30 text-indigo-200 border border-indigo-500/30 font-semibold' : 'bg-slate-700/60 text-slate-400'}">
               ${item.length}
             </span>
