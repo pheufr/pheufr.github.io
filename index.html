@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f19">
+  <title>Apps</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0b0f19;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100">
+  <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-12 sm:px-8 sm:py-16">
+    <header class="mb-10 sm:mb-14">
+      <p class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-400">pheufr.github.io</p>
+      <h1 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Apps</h1>
+      <p class="mt-3 max-w-xl text-sm leading-6 text-slate-400">A home for small, useful tools. Pick one to get started.</p>
+    </header>
+
+    <section aria-label="Available apps" class="grid gap-4 sm:grid-cols-2">
+      <a href="./anagram.html" class="group rounded-2xl border border-slate-800 bg-slate-900/70 p-6 transition hover:border-indigo-500/50 hover:bg-slate-900">
+        <div class="mb-8 flex h-11 w-11 items-center justify-center rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-lg font-bold text-indigo-300" aria-hidden="true">A</div>
+        <h2 class="text-lg font-semibold text-white group-hover:text-indigo-200">Anagram Studio</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-400">Arrange letters into words on an interactive board.</p>
+        <span class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-indigo-300">
+          Open app <span aria-hidden="true">→</span>
+        </span>
+      </a>
+
+      <div class="rounded-2xl border border-dashed border-slate-800 p-6">
+        <div class="mb-8 flex h-11 w-11 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-xl text-slate-500" aria-hidden="true">+</div>
+        <h2 class="text-lg font-semibold text-slate-300">More apps</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-500">There’s room for more tools here.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
