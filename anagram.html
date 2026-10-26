@@ -24,6 +24,8 @@
     }
 
     body {
+      height: 100vh;
+      height: 100dvh;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       touch-action: none;
       user-select: none;
@@ -145,6 +147,7 @@
       transform: translateY(115%);
       opacity: 0;
       pointer-events: none;
+      visibility: hidden;
     }
 
     /* Snap Pulse Animation */
@@ -174,36 +177,46 @@
     }
   </style>
 </head>
-<body class="min-h-screen text-slate-100 flex flex-col justify-between overflow-hidden">
+<body class="text-slate-100 flex flex-col overflow-hidden">
 
   <!-- Top Navigation & Control Command Bar -->
-  <header class="w-full max-w-6xl mx-auto px-4 pt-3 pb-2 flex flex-col gap-2.5 z-30">
-    <div class="flex flex-col items-center gap-2">
-      <h1 class="text-base font-bold tracking-tight text-white">Anagram Studio</h1>
-      <!-- Live Tile Status Bar -->
-      <div class="flex items-center gap-2">
-        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs">
+  <header class="w-full px-4 pt-3 pb-2 flex flex-col gap-2.5 shrink-0 z-30">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-400">pheufr.github.io</p>
+        <h1 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">Anagram Studio</h1>
+      </div>
+      <a href="./index.html" class="shrink-0 rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-700 hover:text-white">All apps</a>
+    </div>
+    <!-- Live Tile Status Bar -->
+    <div class="flex w-full items-center gap-2">
+      <div class="flex flex-1 items-center justify-around gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs">
+        <span class="flex items-center gap-1.5">
           <span class="text-slate-400">Total:</span>
           <span id="statTotal" class="font-mono font-semibold text-slate-200">0</span>
-          <span class="text-slate-600 px-1">•</span>
+        </span>
+        <span class="text-slate-600">•</span>
+        <span class="flex items-center gap-1.5">
           <span class="text-indigo-400">Free:</span>
           <span id="statFree" class="font-mono font-semibold text-indigo-300">0</span>
-          <span class="text-slate-600 px-1">•</span>
+        </span>
+        <span class="text-slate-600">•</span>
+        <span class="flex items-center gap-1.5">
           <span class="text-emerald-400">Words:</span>
           <span id="statWords" class="font-mono font-semibold text-emerald-300">0</span>
-        </div>
-
-        <!-- Hint Button (? Icon) -->
-        <button id="hintToggleBtn" title="Show Longest Word Suggestions (?)" class="relative flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 transition active:scale-95 shadow-sm">
-          <i data-lucide="help-circle" class="w-4 h-4"></i>
-          <span id="hintBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center hidden">0</span>
-        </button>
+        </span>
       </div>
+
+      <!-- Hint Button (? Icon) -->
+      <button id="hintToggleBtn" title="Show Longest Word Suggestions (?)" aria-label="Toggle word hints" aria-controls="hintShelf" aria-expanded="false" class="relative flex shrink-0 items-center justify-center w-8 h-8 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 transition active:scale-95 shadow-sm">
+        <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <span id="hintBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center hidden">0</span>
+      </button>
     </div>
 
     <!-- Letter Input & Toolbar -->
     <div class="bg-slate-900/85 backdrop-blur-md p-2 rounded-xl border border-slate-800 flex flex-wrap items-center gap-2 shadow-sm">
-      <div class="relative flex-1 min-w-[210px]">
+      <div class="relative flex-1 min-w-0 basis-[210px]">
         <input 
           id="letterInput" 
           type="text" 
@@ -245,8 +258,8 @@
   </header>
 
   <!-- Workspace Canvas -->
-  <main class="flex-1 w-full max-w-6xl mx-auto px-4 pb-2 flex flex-col relative min-h-0">
-    <div class="workspace-canvas flex-1 w-full h-full rounded-2xl relative overflow-hidden border border-slate-800 shadow-inner select-none" id="board">
+  <main class="flex-1 w-full px-4 pb-2 flex flex-col relative min-h-0">
+    <div class="workspace-canvas flex-1 min-h-0 w-full rounded-2xl relative overflow-hidden border border-slate-800 shadow-inner select-none" id="board">
       
       <!-- Magnetic Snap Ghost Target Indicator -->
       <div id="snapGuide" class="absolute pointer-events-none rounded-xl border-2 border-indigo-400 bg-indigo-500/15 hidden z-20 transition-all duration-75"></div>
@@ -286,7 +299,7 @@
       </div>
 
       <!-- Hint Suggestions Bottom Shelf -->
-      <div id="hintShelf" class="shelf-hidden absolute bottom-2 left-2 right-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-3 z-40">
+      <div id="hintShelf" aria-hidden="true" inert class="shelf-hidden absolute bottom-2 left-2 right-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-3 z-40">
         <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
           <div class="flex items-center gap-2">
             <span class="flex h-2 w-2 relative">
@@ -311,7 +324,7 @@
   </main>
 
   <!-- Footer / Status Bar -->
-  <footer class="w-full max-w-6xl mx-auto px-4 py-2 flex items-center justify-between text-xs text-slate-400 border-t border-slate-900">
+  <footer class="w-full shrink-0 px-4 py-2 flex items-center justify-between text-xs text-slate-400 border-t border-slate-900">
     <div class="flex items-center gap-3">
       <button id="soundToggleBtn" class="hover:text-slate-200 flex items-center gap-1.5 transition">
         <i id="soundIcon" data-lucide="volume-2" class="w-3.5 h-3.5 text-indigo-400"></i>
@@ -903,6 +916,9 @@
 
     function toggleHintShelf(forceState) {
       hintShelfOpen = forceState !== undefined ? forceState : !hintShelfOpen;
+      document.getElementById('hintToggleBtn').setAttribute('aria-expanded', String(hintShelfOpen));
+      hintShelf.setAttribute('aria-hidden', String(!hintShelfOpen));
+      hintShelf.inert = !hintShelfOpen;
       if (hintShelfOpen) {
         hintShelf.classList.remove('shelf-hidden');
         updateSuggestionsUI();
@@ -1085,32 +1101,63 @@
 
     function shuffleAllTiles() {
       if (tiles.length === 0) return;
+
+      const margin = 16;
+      const gap = 8;
+      const usableWidth = board.clientWidth - margin * 2;
+      const usableHeight = board.clientHeight - margin * 2 -
+        (hintShelfOpen ? hintShelf.offsetHeight + 8 : 0);
+      const groups = [...new Set(tiles.map(tile => tile.group))];
+
+      function randomize(items) {
+        for (let i = items.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [items[i], items[j]] = [items[j], items[i]];
+        }
+      }
+
+      randomize(groups);
+      groups.sort((a, b) => b.length - a.length);
+      const rows = [];
+      for (const group of groups) {
+        const width = group.length * tileSize;
+        if (width > usableWidth) {
+          showToast("Not enough room to shuffle. Split words or enlarge the window.");
+          return;
+        }
+        let row = rows.find(row => row.width + gap + width <= usableWidth);
+        if (!row) {
+          row = { groups: [], width: 0 };
+          rows.push(row);
+        }
+        row.width += (row.groups.length ? gap : 0) + width;
+        row.groups.push(group);
+      }
+      const requiredHeight = rows.length * (tileSize + gap) - gap;
+      if (requiredHeight > usableHeight) {
+        showToast("Not enough room to shuffle. Clear some tiles or enlarge the window.");
+        return;
+      }
+
       sound.shuffle();
-
-      const bRect = board.getBoundingClientRect();
-      const maxX = Math.max(16, bRect.width - tileSize - 16);
-      const maxY = Math.max(16, bRect.height - tileSize - 100);
-
-      // Randomize free tiles individually; groups stay together and translate to new random spots
-      const seen = new Set();
-      tiles.forEach(t => {
-        if (!seen.has(t.group)) {
-          seen.add(t.group);
-          const g = t.group;
-          const gWidth = g.length * tileSize;
-          const newX = 16 + Math.random() * Math.max(10, (bRect.width - gWidth - 32));
-          const newY = 24 + Math.random() * maxY;
-
-          g.forEach((tile, i) => {
-            tile.x = newX + (i * tileSize);
-            tile.y = newY;
+      randomize(rows);
+      let y = margin + Math.random() * (usableHeight - requiredHeight);
+      rows.forEach(row => {
+        randomize(row.groups);
+        let x = margin + Math.random() * (usableWidth - row.width);
+        row.groups.forEach(group => {
+          group.forEach((tile, i) => {
+            tile.x = x + i * tileSize;
+            tile.y = y;
             tile.element.style.transition = 'transform 0.35s cubic-bezier(0.2, 0.85, 0.4, 1.2)';
             tile.updateDOM();
             setTimeout(() => {
               tile.element.style.transition = 'box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease';
             }, 360);
           });
-        }
+          x += group.length * tileSize + gap;
+        });
+        y += tileSize + gap;
       });
 
       onBoardStateChanged();
@@ -1227,13 +1274,11 @@
     window.loadWord = function(word) {
       clearAll();
       addTiles(word);
-      toggleHintShelf(true);
     };
 
     // Initial setup with an inspiring starter word
     window.addEventListener('load', () => {
       addTiles('RESCUE');
-      toggleHintShelf(true);
     });
   </script>
 </body>
