@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Anagram Studio — Intelligent Anagram Solver</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --tile-size: 54px;
+    }
+    @media (max-width: 640px) {
+      :root {
+        --tile-size: 44px;
+      }
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      background-color: #0b0f19;
+    }
+
+    /* Minimalist Dot Grid Board */
+    .workspace-canvas {
+      background-color: #0d1322;
+      background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1.25px, transparent 1.25px);
+      background-size: 24px 24px;
+    }
+
+    /* Modern Card Letter Tiles */
+    .letter-tile {
+      width: var(--tile-size);
+      height: var(--tile-size);
+      position: absolute;
+      border-radius: 12px;
+      cursor: grab;
+      touch-action: none;
+      background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      box-shadow: 
+        0 4px 14px -2px rgba(0, 0, 0, 0.5),
+        0 2px 4px -1px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      will-change: transform;
+      transition: box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease;
+    }
+
+    .letter-tile:hover {
+      border-color: rgba(99, 102, 241, 0.7);
+      box-shadow: 
+        0 8px 20px -3px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(99, 102, 241, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .letter-tile:active, .letter-tile.dragging {
+      cursor: grabbing;
+      filter: brightness(1.12);
+      border-color: #818cf8;
+      box-shadow: 
+        0 16px 32px -4px rgba(0, 0, 0, 0.7),
+        0 0 0 2px rgba(99, 102, 241, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      z-index: 999 !important;
+    }
+
+    .tile-char {
+      font-weight: 700;
+      font-size: calc(var(--tile-size) * 0.46);
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    /* Seamless group connection aesthetic */
+    .letter-tile.in-group {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .letter-tile.connected-left {
+      border-top-left-radius: 3px;
+      border-bottom-left-radius: 3px;
+      border-left-color: rgba(148, 163, 184, 0.1);
+    }
+    .letter-tile.connected-right {
+      border-top-right-radius: 3px;
+      border-bottom-right-radius: 3px;
+      border-right-color: rgba(148, 163, 184, 0.1);
+    }
+
+    /* Minimalist Detach pill on hover/focus */
+    .detach-handle {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 18px;
+      height: 18px;
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.15s ease;
+      cursor: pointer;
+      z-index: 25;
+    }
+    .detach-handle:hover {
+      background: #ef4444;
+      color: #ffffff;
+      border-color: #ef4444;
+      transform: scale(1.1);
+    }
+    .letter-tile.in-group:hover .detach-handle {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Smooth shelf transition */
+    #hintShelf {
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;
+    }
+    #hintShelf.shelf-hidden {
+      transform: translateY(115%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Snap Pulse Animation */
+    @keyframes snapGlow {
+      0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+    .snap-pulse {
+      animation: snapGlow 0.45s ease-out;
+    }
+
+    /* Custom sleek scrollbar */
+    ::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.4);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between overflow-hidden">
+
+  <!-- Top Navigation & Control Command Bar -->
+  <header class="w-full max-w-6xl mx-auto px-4 pt-3 pb-2 flex flex-col gap-2.5 z-30">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+            Anagram Studio
+          </h1>
+          <p class="text-[11px] text-slate-400">Drag & snap cards into words • Pull vertically or click &times; to break apart</p>
+        </div>
+      </div>
+
+      <!-- Live Tile Status Bar -->
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs">
+          <span class="text-slate-400">Total:</span>
+          <span id="statTotal" class="font-mono font-semibold text-slate-200">0</span>
+          <span class="text-slate-600 px-1">•</span>
+          <span class="text-indigo-400">Free:</span>
+          <span id="statFree" class="font-mono font-semibold text-indigo-300">0</span>
+          <span class="text-slate-600 px-1">•</span>
+          <span class="text-emerald-400">Words:</span>
+          <span id="statWords" class="font-mono font-semibold text-emerald-300">0</span>
+        </div>
+
+        <!-- Hint Button (? Icon) -->
+        <button id="hintToggleBtn" title="Show Longest Word Suggestions (?)" class="relative flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 transition active:scale-95 shadow-sm">
+          <i data-lucide="help-circle" class="w-4 h-4"></i>
+          <span id="hintBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center hidden">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Letter Input & Toolbar -->
+    <div class="bg-slate-900/85 backdrop-blur-md p-2 rounded-xl border border-slate-800 flex flex-wrap items-center gap-2 shadow-sm">
+      <div class="relative flex-1 min-w-[210px]">
+        <input 
+          id="letterInput" 
+          type="text" 
+          placeholder="Type letters or word (e.g., MASTERMIND, RESCUE)..." 
+          maxlength="26"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          class="w-full uppercase font-medium bg-slate-950/70 border border-slate-700/70 rounded-lg px-3.5 py-2 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition tracking-wider"
+        />
+        <button id="inputClearBtn" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button id="generateBtn" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg shadow transition active:scale-95 flex items-center gap-1.5">
+          <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+          <span>Add</span>
+        </button>
+
+        <button id="shuffleBtn" title="Shuffle Tiles" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-white transition active:scale-95 flex items-center justify-center">
+          <i data-lucide="shuffle" class="w-4 h-4"></i>
+        </button>
+
+        <button id="arrangeBtn" title="Organize into Neat Rows" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-white transition active:scale-95 flex items-center justify-center">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i>
+        </button>
+
+        <button id="splitAllBtn" title="Split All Joined Tiles (Break Groups)" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 hover:text-white transition active:scale-95 flex items-center justify-center">
+          <i data-lucide="scissors" class="w-4 h-4"></i>
+        </button>
+
+        <button id="clearBtn" title="Clear Board" class="p-2 bg-slate-800/80 hover:bg-red-950/50 border border-slate-700 hover:border-red-900 rounded-lg text-slate-400 hover:text-red-400 transition active:scale-95 flex items-center justify-center">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Workspace Canvas -->
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 pb-2 flex flex-col relative min-h-0">
+    <div class="workspace-canvas flex-1 w-full h-full rounded-2xl relative overflow-hidden border border-slate-800 shadow-inner select-none" id="board">
+      
+      <!-- Magnetic Snap Ghost Target Indicator -->
+      <div id="snapGuide" class="absolute pointer-events-none rounded-xl border-2 border-indigo-400 bg-indigo-500/15 hidden z-20 transition-all duration-75"></div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 pointer-events-none transition-opacity duration-200">
+        <div class="w-12 h-12 rounded-2xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-center mb-3">
+          <i data-lucide="type" class="w-6 h-6 text-indigo-400"></i>
+        </div>
+        <h2 class="text-sm font-semibold text-slate-200">Workspace Ready</h2>
+        <p class="text-xs text-slate-400 max-w-xs mt-1">
+          Type letters above and press <span class="text-indigo-400 font-medium">Add</span>. Drag tiles adjacent to snap them horizontally into words.
+        </p>
+        <div class="mt-4 flex flex-wrap justify-center gap-2 pointer-events-auto">
+          <button onclick="loadWord('EXPERIENCE')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 transition">
+            "EXPERIENCE"
+          </button>
+          <button onclick="loadWord('DISCOVERY')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 transition">
+            "DISCOVERY"
+          </button>
+          <button onclick="loadWord('CREATIVE')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 transition">
+            "CREATIVE"
+          </button>
+        </div>
+      </div>
+
+      <!-- Tile Layer -->
+      <div id="tileLayer" class="absolute inset-0"></div>
+
+      <!-- Connected Group Valid Word Badges (Floating on bottom left) -->
+      <div id="wordTagsBar" class="absolute top-3 left-3 flex flex-wrap gap-2 pointer-events-none z-10"></div>
+
+      <!-- Toast Feedback Message -->
+      <div id="toastMessage" class="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-slate-900/95 border border-indigo-500/40 text-slate-200 text-xs shadow-xl pointer-events-none opacity-0 transition-opacity duration-200 z-50 flex items-center gap-2">
+        <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span id="toastText">Notification</span>
+      </div>
+
+      <!-- Hint Suggestions Bottom Shelf -->
+      <div id="hintShelf" class="shelf-hidden absolute bottom-2 left-2 right-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl p-3 z-40">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
+          <div class="flex items-center gap-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            </span>
+            <span class="text-xs font-semibold text-slate-200">Longest Words from Unjoined Letters</span>
+            <span id="shelfSummary" class="text-[11px] text-slate-400 font-mono">0 found</span>
+          </div>
+          <button id="closeShelfBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Scrollable Suggestions Row -->
+        <div id="suggestionsContainer" class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
+          <!-- Populated by suggestion engine -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer / Status Bar -->
+  <footer class="w-full max-w-6xl mx-auto px-4 py-2 flex items-center justify-between text-xs text-slate-400 border-t border-slate-900">
+    <div class="flex items-center gap-3">
+      <button id="soundToggleBtn" class="hover:text-slate-200 flex items-center gap-1.5 transition">
+        <i id="soundIcon" data-lucide="volume-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span id="soundLabel">Sound On</span>
+      </button>
+      <span class="text-slate-700">•</span>
+      <span class="hidden sm:inline">Unjoined letters are used for suggestions • Pull vertically to detach</span>
+    </div>
+    <div class="flex items-center gap-1.5 text-slate-500 text-[11px]">
+      <i data-lucide="book-open" class="w-3.5 h-3.5 text-slate-500"></i>
+      <span id="dictStats">Dictionary Active</span>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    /* ============================================================
+       TACTILE SOUND SYNTHESIS (Clean minimalist audio)
+       ============================================================ */
+    class MinimalAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      snap() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(620, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.035);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      }
+      pickup() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(360, now + 0.025);
+
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.03);
+      }
+      assemble() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [440, 554, 659].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now + (i * 0.04));
+          gain.gain.setValueAtTime(0.1, now + (i * 0.04));
+          gain.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.04) + 0.06);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + (i * 0.04));
+          osc.stop(now + (i * 0.04) + 0.07);
+        });
+      }
+      shuffle() {
+        if (this.muted) return;
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => this.snap(), i * 40);
+        }
+      }
+    }
+
+    const sound = new MinimalAudio();
+
+    /* ============================================================
+       COMPREHENSIVE EMBEDDED DICTIONARY
+       Covers high frequency anagram combinations & English vocabulary
+       ============================================================ */
+    const RAW_WORDS = [
+      // 10+ letters
+      "EXPERIENCE","DISCOVERY","CREATIVITY","INTELLIGENCE","WONDERFUL","CHARACTER","COMMUNITY","BEAUTIFUL","KNOWLEDGE","CONFIDENCE",
+      "CELEBRATE","IMPORTANT","PERFECTION","CONNECTION","CHALLENGE","ADVENTURE","DISCOVERY","FRIENDSHIP","BEAUTIFUL","INVENTIONS",
+      // 8-9 letters
+      "CREATIVE","REACTIVE","REACTION","CREATION","RESONATE","RESTORING","STARTING","TRAINING","PAINTING","MOUNTAIN","FOUNTAIN",
+      "HOSPITAL","PRACTICE","BUILDING","CUSTOMER","LANGUAGE","QUESTION","COMPUTER","SOFTWARE","HARDWARE","SECURITY","STRATEGY",
+      "SOLUTION","PLATFORM","LEARNING","TEACHERS","STUDENTS","RESEARCH","DISCOVER","CALENDAR","TOGETHER","BUSINESS","FORECAST",
+      "DELIVERY","POSITION","MOVEMENT","MATERIAL","THINKING","GARDENER","PLEASURE","SURPRISE","ACCIDENT","ABSOLUTE","STRONGER",
+      // 7 letters
+      "SILENT","LISTEN","TINSEL","ENLIST","INLETS","RELATED","ALTERED","TREADLE","GARDEN","DANGER","GANDER","RANGED","STREAM",
+      "MASTER","TAMERS","FLOWER","FOWLER","WOLFER","RESCUE","SECURE","RECUSE","POETRY","STOREY","OYSTER","POINTER","PROTEIN",
+      "PAINTER","REPAINT","CURTAIN","TRAINER","WEATHER","CENTRAL","SCIENCE","PRODUCT","NETWORK","PROGRAM","PROJECT","MACHINE",
+      "ACCOUNT","SERVICE","SUPPORT","PARTNER","JOURNEY","MORNING","EVENING","TONIGHT","WEEKEND","SUCCESS","VICTORY","FREEDOM",
+      "JUSTICE","BALANCE","COURAGE","PATIENT","HEALTHY","NATURAL","ORGANIC","CAPTURE","REFLECT","PROMISE","ACHIEVE","IMAGINE",
+      "INSPIRE","EXPLORE","COMMAND","CONTROL","SPECIAL","PRIMARY","VIRTUAL","DIGITAL","GENUINE","PERFECT","DYNAMIC","CURRENT",
+      // 6 letters
+      "LISTEN","SILENT","ENLIST","INLETS","TINSEL","STONE","TONES","NOTES","ONSET","STARE","TARES","RATES","ASTER","TEARS",
+      "CRATE","TRACE","REACT","CATER","ACTOR","CREST","STEER","RESET","TERSE","ENTER","DETAIL","DILATE","TAILED","SWORD",
+      "WORDS","HORSE","SHORE","CLONE","BRAIN","TRAIN","PAINT","POINT","SPAIN","PIANO","MUSIC","CLEAR","SCALE","SPEAR",
+      "SPARE","PEARS","REAPS","PRONE","POWER","ROPES","SPORE","PROSE","OPENS","BREAD","BEARD","ALERT","ALTER","LATER",
+      "TREAD","RATED","STREET","TESTER","SHINE","SMILE","PLANET","SILVER","GOLDEN","SPRING","SUMMER","WINTER","AUTUMN",
+      "MOTHER","FATHER","SISTER","BROTHER","DOCTOR","WRITER","ARTIST","NATURE","PERSON","MEMBER","SYSTEM","FUTURE","ENERGY",
+      "RECORD","POLICY","MARKET","DESIGN","SIMPLE","FLIGHT","CAMERA","ISLAND","FOREST","VALLEY","PALACE","CASTLE","PRINCE",
+      // 5 letters
+      "APPLE","BEACH","CHAIR","DANCE","EAGLE","FLAME","GRAPE","HOUSE","IMAGE","JUICE","KNIFE","LEMON","MANGO","NIGHT","OCEAN",
+      "PAPER","QUEEN","RIVER","STORM","TABLE","WATER","WHITE","BLACK","GREEN","ROUND","SMART","GREAT","LIGHT","SOUND","SPACE",
+      "WORLD","EARTH","HEART","HATER","SHARE","SHEAR","TEAR","RATE","TARE","MEAT","TEAM","MATE","TAME","TIME","EMIT","ITEM",
+      "MITE","LIVE","EVIL","VILE","VEIL","LEAD","DEAL","DALE","LADE","CARE","RACE","ACRE","READ","DEAR","DARE","SAID","PAID",
+      "GUIDE","STAGE","FAITH","TRUTH","PEACE","DREAM","GLORY","YOUTH","PRIDE","CROWN","SPARK","SHINE","CLOCK","TOWER","BRIDGE",
+      // 4 letters
+      "ABLE","ACID","AGED","ALSO","AREA","ARMY","AWAY","BABY","BACK","BALL","BAND","BANK","BASE","BATH","BEAR","BEAT","BEEN",
+      "BEER","BELL","BELT","BEST","BIRD","BLOW","BLUE","BOAT","BODY","BOND","BONE","BOOK","BOOM","BORN","BOSS","BOTH","BOWL",
+      "BULK","BURN","BUSH","BUSY","CALL","CALM","CAME","CAMP","CARD","CARE","CASE","CASH","CAST","CELL","CHAT","CHIP","CITY",
+      "CLUB","COAL","COAT","CODE","COLD","COME","COOK","COOL","COPE","CORE","COST","CREW","CROP","DARK","DATA","DATE","DAWN",
+      "DAYS","DEAD","DEAL","DEAN","DEAR","DEBT","DEEP","DENY","DESK","DIAL","DIET","DISC","DISK","DOES","DONE","DOOR","DOSE",
+      "DOWN","DRAW","DREW","DROP","DRUG","DUAL","DUKE","DUST","DUTY","EACH","EARN","EASE","EAST","EASY","EDGE","ELSE","EVEN",
+      "EVER","FACE","FACT","FAIR","FALL","FARM","FAST","FATE","FEAR","FEED","FEEL","FEET","FELL","FILE","FILL","FILM","FIND",
+      "FINE","FIRE","FIRM","FISH","FIVE","FLAT","FLOW","FOOD","FOOT","FORD","FORM","FORT","FOUR","FREE","FROM","FULL","FUND",
+      "GAME","GANG","GATE","GAVE","GEAR","GENE","GIFT","GIRL","GIVE","GLAD","GOAL","GOES","GOLD","GOLF","GONE","GOOD","GRAY",
+      "GREW","GROW","GULF","HAIR","HALF","HALL","HAND","HANG","HARD","HARM","HATE","HAVE","HEAD","HEAR","HEAT","HELD","HELL",
+      "HELP","HERO","HIGH","HILL","HIRE","HOLD","HOLE","HOLY","HOME","HOPE","HOST","HOUR","HUGE","HUNG","HUNT","HURT","IDEA",
+      "INCH","INTO","IRON","ITEM","JOIN","JUMP","JURY","JUST","KEEP","KEPT","KICK","KILL","KIND","KING","KNEE","KNEW","KNOW",
+      "LACK","LADY","LAID","LAKE","LAND","LANE","LAST","LATE","LEAD","LEFT","LESS","LIFE","LIFT","LIKE","LINE","LINK","LION",
+      "LIST","LIVE","LOAD","LOAN","LOCK","LOGO","LONG","LOOK","LORD","LOSE","LOSS","LOST","LOVE","LUCK","MADE","MAIL","MAIN",
+      "MAKE","MALE","MANY","MARK","MASS","MEAL","MEAN","MEAT","MEET","MENU","MERE","MIKE","MILE","MILK","MILL","MIND","MINE",
+      "MISS","MODE","MOOD","MOON","MORE","MOST","MOVE","MUCH","MUST","NAME","NAVY","NEAR","NECK","NEED","NEWS","NEXT","NICE",
+      "NINE","NONE","NOSE","NOTE","OKAY","ONCE","ONLY","OPEN","ORAL","OVER","PACE","PACK","PAGE","PAID","PAIN","PAIR","PALM",
+      "PARK","PART","PASS","PAST","PATH","PEAK","PICK","PILE","PINK","PIPE","PLAN","PLAY","PLOT","PLUG","PLUS","POEM","POET",
+      "POLL","POOL","POOR","PORT","POST","PULL","PURE","PUSH","RACE","RAIL","RAIN","RANK","RARE","RATE","READ","REAL","REAR",
+      "RELY","RENT","REST","RICE","RICH","RIDE","RING","RISE","RISK","ROAD","ROCK","ROLE","ROLL","ROOF","ROOM","ROOT","ROSE",
+      "RULE","RUSH","SAFE","SAID","SAKE","SALE","SALT","SAME","SAND","SAVE","SEAT","SEED","SEEK","SEEM","SEEN","SELF","SELL",
+      "SEND","SENT","SHIP","SHOP","SHOT","SHOW","SHUT","SICK","SIDE","SIGN","SITE","SIZE","SKIN","SLIP","SLOW","SNOW","SOFT",
+      "SOIL","SOLD","SOLE","SOME","SONG","SOON","SORT","SOUL","SPOT","STAR","STAY","STEP","STOP","SUCH","SUIT","SURE","TAKE",
+      "TALE","TALK","TALL","TANK","TAPE","TASK","TEAM","TELL","TEND","TERM","TEST","TEXT","THAN","THAT","THEM","THEN","THEY",
+      "THIN","THIS","THUS","TILL","TIME","TINY","TOLD","TOLL","TONE","TOOK","TOOL","TOUR","TOWN","TREE","TRIP","TRUE","TUNE",
+      "TURN","TWIN","TYPE","UNIT","UPON","USED","USER","VARY","VAST","VERY","VICE","VIEW","VOTE","WAGE","WAIT","WAKE","WALK",
+      "WALL","WANT","WARD","WARM","WASH","WAVE","WAYS","WEAK","WEAR","WEEK","WELL","WENT","WERE","WEST","WHAT","WHEN","WHOM",
+      "WIDE","WIFE","WILD","WILL","WIND","WINE","WING","WINS","WIRE","WISE","WISH","WITH","WOOD","WORD","WORE","WORK","YARD",
+      "YEAR","ZERO","ZONE",
+      // 3 letters
+      "ACT","ADD","AGE","AGO","AID","AIM","AIR","ALL","AND","ANY","APE","ARM","ART","ASK","BAD","BAG","BAR","BAT","BAY","BED",
+      "BEE","BET","BIG","BIT","BOY","BOX","BUS","BUT","BUY","CAN","CAP","CAR","CAT","COW","CRY","CUP","CUT","DAY","DIE","DIG",
+      "DOG","DOT","DRY","DUE","EAR","EAT","EGG","END","EYE","FAN","FAR","FAT","FEW","FIT","FLY","FOG","FOR","FOX","FUN","GAP",
+      "GAS","GET","GOD","GUN","GUY","HAT","HIT","HOT","ICE","ILL","INK","INN","JAW","JOY","KEY","KID","LAB","LAW","LAY","LEG",
+      "LET","LID","LIE","LIP","LOG","LOW","MAN","MAP","MAT","MAY","MEN","MIX","MUD","NET","NEW","NOD","NOT","NOW","NUT","OAK",
+      "ODD","OFF","OIL","OLD","ONE","OUR","OUT","OWL","PAN","PAY","PEN","PET","PIG","PIN","PIT","POT","RAW","RED","RIB","ROD",
+      "ROW","RUN","SAD","SAW","SAY","SEA","SET","SEW","SHE","SIT","SIX","SKI","SKY","SON","SPY","SUN","TAX","TEA","TEN","THE",
+      "TIE","TIN","TIP","TOE","TOP","TOY","TRY","TWO","USE","VAN","WAR","WAY","WET","WHO","WHY","WIN","YES","YET","ZOO"
+    ];
+
+    // Deduplicate & uppercase dictionary
+    const DICTIONARY = Array.from(new Set(RAW_WORDS.map(w => w.toUpperCase())));
+    document.getElementById('dictStats').textContent = `${DICTIONARY.length.toLocaleString()} words loaded`;
+
+    /* ============================================================
+       APPLICATION & TILE ENGINE STATE
+       ============================================================ */
+    const board = document.getElementById('board');
+    const tileLayer = document.getElementById('tileLayer');
+    const letterInput = document.getElementById('letterInput');
+    const snapGuide = document.getElementById('snapGuide');
+    const emptyState = document.getElementById('emptyState');
+    const wordTagsBar = document.getElementById('wordTagsBar');
+    const hintShelf = document.getElementById('hintShelf');
+    const suggestionsContainer = document.getElementById('suggestionsContainer');
+    const shelfSummary = document.getElementById('shelfSummary');
+    const hintBadge = document.getElementById('hintBadge');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastText = document.getElementById('toastText');
+
+    const statTotal = document.getElementById('statTotal');
+    const statFree = document.getElementById('statFree');
+    const statWords = document.getElementById('statWords');
+
+    let tiles = [];
+    let tileIdSeq = 1;
+    let tileSize = 54;
+    let hintShelfOpen = false;
+
+    const SNAP_TOLERANCE_X = 28;
+    const SNAP_TOLERANCE_Y = 25;
+    const DETACH_PULL_THRESHOLD = 36; // Dragging vertically past this detaches tile from group
+
+    function updateTileMetric() {
+      tileSize = window.innerWidth <= 640 ? 44 : 54;
+    }
+    window.addEventListener('resize', () => {
+      updateTileMetric();
+      clampAllTiles();
+    });
+    updateTileMetric();
+
+    /* ============================================================
+       TILE CLASS DEFINITION
+       ============================================================ */
+    class Tile {
+      constructor(char, x, y) {
+        this.id = tileIdSeq++;
+        this.char = char.toUpperCase();
+        this.x = x;
+        this.y = y;
+        this.group = [this]; // Array of Tile objects forming a horizontal snapped word
+        this.element = this.render();
+        this.updateDOM();
+      }
+
+      render() {
+        const div = document.createElement('div');
+        div.className = 'letter-tile';
+        div.id = `tile-${this.id}`;
+
+        const charEl = document.createElement('span');
+        charEl.className = 'tile-char';
+        charEl.textContent = this.char;
+
+        const detachBtn = document.createElement('div');
+        detachBtn.className = 'detach-handle';
+        detachBtn.innerHTML = '&times;';
+        detachBtn.title = 'Separate letter';
+        detachBtn.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          separateTileFromGroup(this);
+          sound.snap();
+        });
+
+        div.appendChild(charEl);
+        div.appendChild(detachBtn);
+        this.initDrag(div);
+        return div;
+      }
+
+      updateDOM() {
+        this.element.style.transform = `translate3d(${Math.round(this.x)}px, ${Math.round(this.y)}px, 0)`;
+      }
+
+      initDrag(el) {
+        let isDragging = false;
+        let startClientX = 0;
+        let startClientY = 0;
+        let originX = 0;
+        let originY = 0;
+        let groupOffsets = [];
+        let detachedThisDrag = false;
+
+        const onPointerDown = (e) => {
+          if (e.target.classList.contains('detach-handle')) return;
+          e.preventDefault();
+          sound.pickup();
+
+          isDragging = true;
+          detachedThisDrag = false;
+          el.setPointerCapture(e.pointerId);
+
+          startClientX = e.clientX;
+          startClientY = e.clientY;
+          originX = this.x;
+          originY = this.y;
+
+          // Snapshot current relative positions of all tiles in group
+          groupOffsets = this.group.map(t => ({
+            tile: t,
+            dx: t.x - originX,
+            dy: t.y - originY
+          }));
+
+          this.group.forEach(t => {
+            t.element.classList.add('dragging');
+            t.element.style.zIndex = 300;
+          });
+        };
+
+        const onPointerMove = (e) => {
+          if (!isDragging) return;
+
+          const dx = e.clientX - startClientX;
+          const dy = e.clientY - startClientY;
+
+          // Vertical pull detachment check
+          if (this.group.length > 1 && !detachedThisDrag && Math.abs(dy) > DETACH_PULL_THRESHOLD) {
+            detachedThisDrag = true;
+            separateTileFromGroup(this);
+            sound.snap();
+
+            // Re-anchor this tile's drag as a single free tile
+            groupOffsets = [{ tile: this, dx: 0, dy: 0 }];
+            originX = this.x;
+            originY = this.y;
+            startClientX = e.clientX;
+            startClientY = e.clientY;
+            return;
+          }
+
+          // Move the entire group together
+          groupOffsets.forEach(({ tile, dx: relX, dy: relY }) => {
+            tile.x = originX + dx + relX;
+            tile.y = originY + dy + relY;
+            tile.updateDOM();
+          });
+
+          checkSnapGuidance(this);
+        };
+
+        const onPointerUp = (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          el.releasePointerCapture(e.pointerId);
+
+          this.group.forEach(t => {
+            t.element.classList.remove('dragging');
+            t.element.style.zIndex = 10;
+          });
+
+          hideSnapGuide();
+          executeSnap(this);
+          clampGroup(this.group);
+          onBoardStateChanged();
+        };
+
+        el.addEventListener('pointerdown', onPointerDown);
+        el.addEventListener('pointermove', onPointerMove);
+        el.addEventListener('pointerup', onPointerUp);
+        el.addEventListener('pointercancel', onPointerUp);
+      }
+    }
+
+    /* ============================================================
+       MAGNETIC SNAPPING & CONNECTIONS
+       ============================================================ */
+    let snapCandidate = null;
+
+    function checkSnapGuidance(activeTile) {
+      snapCandidate = null;
+      hideSnapGuide();
+
+      const activeGroup = activeTile.group;
+      const leftTile = activeGroup[0];
+      const rightTile = activeGroup[activeGroup.length - 1];
+
+      for (const target of tiles) {
+        if (activeGroup.includes(target)) continue;
+
+        const targetGroup = target.group;
+        const targetLeft = targetGroup[0];
+        const targetRight = targetGroup[targetGroup.length - 1];
+
+        // Case 1: active group snaps to left of target group
+        const diffRtoL = Math.abs((rightTile.x + tileSize) - targetLeft.x);
+        const diffY1 = Math.abs(rightTile.y - targetLeft.y);
+
+        if (diffRtoL < SNAP_TOLERANCE_X && diffY1 < SNAP_TOLERANCE_Y) {
+          snapCandidate = {
+            sourceGroup: activeGroup,
+            targetGroup: targetGroup,
+            position: 'BEFORE_TARGET',
+            ghostX: targetLeft.x - (activeGroup.length * tileSize),
+            ghostY: targetLeft.y
+          };
+          renderSnapGuide(snapCandidate.ghostX, snapCandidate.ghostY, activeGroup.length * tileSize, tileSize);
+          return;
+        }
+
+        // Case 2: active group snaps to right of target group
+        const diffLtoR = Math.abs(leftTile.x - (targetRight.x + tileSize));
+        const diffY2 = Math.abs(leftTile.y - targetRight.y);
+
+        if (diffLtoR < SNAP_TOLERANCE_X && diffY2 < SNAP_TOLERANCE_Y) {
+          snapCandidate = {
+            sourceGroup: activeGroup,
+            targetGroup: targetGroup,
+            position: 'AFTER_TARGET',
+            ghostX: targetRight.x + tileSize,
+            ghostY: targetRight.y
+          };
+          renderSnapGuide(snapCandidate.ghostX, snapCandidate.ghostY, activeGroup.length * tileSize, tileSize);
+          return;
+        }
+      }
+    }
+
+    function renderSnapGuide(x, y, w, h) {
+      snapGuide.style.display = 'block';
+      snapGuide.style.width = `${w}px`;
+      snapGuide.style.height = `${h}px`;
+      snapGuide.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
+    }
+
+    function hideSnapGuide() {
+      snapGuide.style.display = 'none';
+    }
+
+    function executeSnap(activeTile) {
+      if (!snapCandidate) return;
+
+      const { sourceGroup, targetGroup, position } = snapCandidate;
+      sound.snap();
+
+      let combined = [];
+
+      if (position === 'BEFORE_TARGET') {
+        combined = [...sourceGroup, ...targetGroup];
+        const startX = targetGroup[0].x - (sourceGroup.length * tileSize);
+        const y = targetGroup[0].y;
+        sourceGroup.forEach((t, i) => {
+          t.x = startX + (i * tileSize);
+          t.y = y;
+          t.updateDOM();
+        });
+      } else {
+        combined = [...targetGroup, ...sourceGroup];
+        const startX = targetGroup[targetGroup.length - 1].x + tileSize;
+        const y = targetGroup[0].y;
+        sourceGroup.forEach((t, i) => {
+          t.x = startX + (i * tileSize);
+          t.y = y;
+          t.updateDOM();
+        });
+      }
+
+      combined.forEach(t => {
+        t.group = combined;
+        t.element.classList.add('snap-pulse');
+        setTimeout(() => t.element.classList.remove('snap-pulse'), 450);
+      });
+
+      refreshVisualGrouping();
+      snapCandidate = null;
+    }
+
+    function separateTileFromGroup(tile) {
+      const g = tile.group;
+      if (g.length <= 1) return;
+
+      const idx = g.indexOf(tile);
+      if (idx === -1) return;
+
+      const leftPart = g.slice(0, idx);
+      const rightPart = g.slice(idx + 1);
+
+      tile.group = [tile];
+      tile.y += 28; // nudge down visibly
+      tile.updateDOM();
+
+      if (leftPart.length > 0) {
+        leftPart.forEach(t => t.group = leftPart);
+      }
+      if (rightPart.length > 0) {
+        rightPart.forEach(t => t.group = rightPart);
+      }
+
+      refreshVisualGrouping();
+      onBoardStateChanged();
+    }
+
+    function splitAllGroups() {
+      if (tiles.length === 0) return;
+      sound.snap();
+      tiles.forEach(t => {
+        t.group = [t];
+      });
+      refreshVisualGrouping();
+      showToast("Split all tiles into free letters");
+      onBoardStateChanged();
+    }
+
+    function refreshVisualGrouping() {
+      tiles.forEach(t => {
+        t.element.classList.remove('in-group', 'connected-left', 'connected-right');
+        const g = t.group;
+        if (g.length > 1) {
+          t.element.classList.add('in-group');
+          const i = g.indexOf(t);
+          if (i > 0) t.element.classList.add('connected-left');
+          if (i < g.length - 1) t.element.classList.add('connected-right');
+        }
+      });
+    }
+
+    function clampGroup(group) {
+      const bRect = board.getBoundingClientRect();
+      if (!bRect.width) return;
+
+      const left = group[0];
+      const right = group[group.length - 1];
+
+      let dx = 0;
+      let dy = 0;
+
+      if (left.x < 12) dx = 12 - left.x;
+      else if (right.x + tileSize > bRect.width - 12) dx = (bRect.width - 12) - (right.x + tileSize);
+
+      if (left.y < 12) dy = 12 - left.y;
+      else if (left.y + tileSize > bRect.height - (hintShelfOpen ? 120 : 20)) {
+        dy = (bRect.height - (hintShelfOpen ? 120 : 20)) - (left.y + tileSize);
+      }
+
+      if (dx !== 0 || dy !== 0) {
+        group.forEach(t => {
+          t.x += dx;
+          t.y += dy;
+          t.updateDOM();
+        });
+      }
+    }
+
+    function clampAllTiles() {
+      const seen = new Set();
+      tiles.forEach(t => {
+        if (!seen.has(t.group)) {
+          seen.add(t.group);
+          clampGroup(t.group);
+        }
+      });
+    }
+
+    /* ============================================================
+       UNJOINED LETTER TRACKING & LONGEST WORD SEARCH
+       ============================================================ */
+    function getUnjoinedTiles() {
+      // Unjoined = tiles in a group of size 1
+      return tiles.filter(t => t.group.length === 1);
+    }
+
+    function getJoinedGroups() {
+      const seen = new Set();
+      const groups = [];
+      tiles.forEach(t => {
+        if (t.group.length > 1 && !seen.has(t.group)) {
+          seen.add(t.group);
+          groups.push(t.group);
+        }
+      });
+      return groups;
+    }
+
+    function findLongestWordsFromUnjoinedLetters() {
+      const unjoinedTiles = getUnjoinedTiles();
+      if (unjoinedTiles.length < 2) return [];
+
+      const availableCounts = {};
+      for (const t of unjoinedTiles) {
+        availableCounts[t.char] = (availableCounts[t.char] || 0) + 1;
+      }
+
+      const validMatches = [];
+      const maxLen = unjoinedTiles.length;
+
+      for (const word of DICTIONARY) {
+        if (word.length > maxLen) continue;
+        if (word.length < 3 && maxLen >= 3) continue; // favor 3+ letter words when available
+
+        const neededCounts = {};
+        let canForm = true;
+
+        for (const char of word) {
+          neededCounts[char] = (neededCounts[char] || 0) + 1;
+          if (!availableCounts[char] || neededCounts[char] > availableCounts[char]) {
+            canForm = false;
+            break;
+          }
+        }
+
+        if (canForm) {
+          validMatches.push({ word, length: word.length });
+        }
+      }
+
+      // Sort primarily by longest length descending, then alphabetical
+      validMatches.sort((a, b) => {
+        if (b.length !== a.length) return b.length - a.length;
+        return a.word.localeCompare(b.word);
+      });
+
+      return validMatches;
+    }
+
+    /* ============================================================
+       HINT SHELF & DYNAMIC SUGGESTION BAR
+       ============================================================ */
+    function updateSuggestionsUI() {
+      const suggestions = findLongestWordsFromUnjoinedLetters();
+      const unjoinedCount = getUnjoinedTiles().length;
+
+      // Update badge
+      if (suggestions.length > 0) {
+        hintBadge.textContent = suggestions.length > 99 ? '99+' : suggestions.length;
+        hintBadge.classList.remove('hidden');
+      } else {
+        hintBadge.classList.add('hidden');
+      }
+
+      shelfSummary.textContent = `${suggestions.length} available (${unjoinedCount} free letters)`;
+      suggestionsContainer.innerHTML = '';
+
+      if (suggestions.length === 0) {
+        const msg = document.createElement('div');
+        msg.className = 'text-xs text-slate-400 py-2.5 px-3 italic flex items-center gap-2';
+        msg.innerHTML = unjoinedCount === 0 
+          ? '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> All letters are joined into words!' 
+          : '<i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i> No dictionary words can be formed with the remaining free letters.';
+        suggestionsContainer.appendChild(msg);
+        lucide.createIcons();
+        return;
+      }
+
+      // Render modern suggestion cards
+      suggestions.slice(0, 24).forEach((item, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-indigo-600/25 border border-slate-700/80 hover:border-indigo-500/60 transition active:scale-95 group text-left shadow-sm';
+        
+        // Highlight longest suggestions
+        const isLongest = index === 0 || item.length === suggestions[0].length;
+
+        btn.innerHTML = `
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-xs tracking-wider ${isLongest ? 'text-indigo-300 group-hover:text-white' : 'text-slate-200 group-hover:text-indigo-200'}">${item.word}</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.2 rounded ${isLongest ? 'bg-indigo-500/30 text-indigo-200 border border-indigo-500/30 font-semibold' : 'bg-slate-700/60 text-slate-400'}">
+              ${item.length}
+            </span>
+          </div>
+          <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-500 group-hover:text-indigo-400 opacity-60 group-hover:opacity-100 transition"></i>
+        `;
+
+        btn.addEventListener('click', () => {
+          formWordFromUnjoined(item.word);
+        });
+
+        suggestionsContainer.appendChild(btn);
+      });
+
+      lucide.createIcons();
+    }
+
+    function toggleHintShelf(forceState) {
+      hintShelfOpen = forceState !== undefined ? forceState : !hintShelfOpen;
+      if (hintShelfOpen) {
+        hintShelf.classList.remove('shelf-hidden');
+        updateSuggestionsUI();
+      } else {
+        hintShelf.classList.add('shelf-hidden');
+      }
+    }
+
+    /* ============================================================
+       FORM SUGGESTION ON CANVAS (ONLY USING UNJOINED TILES)
+       ============================================================ */
+    function formWordFromUnjoined(word) {
+      const freeTiles = getUnjoinedTiles();
+      const neededChars = word.split('');
+      const selectedTiles = [];
+
+      // Find free tiles that match the characters needed
+      for (const char of neededChars) {
+        const matchIdx = freeTiles.findIndex(t => t.char === char && !selectedTiles.includes(t));
+        if (matchIdx !== -1) {
+          selectedTiles.push(freeTiles[matchIdx]);
+        }
+      }
+
+      // Safety check: ensure all letters were sourced exclusively from unjoined tiles
+      if (selectedTiles.length !== word.length) {
+        showToast("Cannot form: some letters are already locked in words!");
+        return;
+      }
+
+      sound.assemble();
+
+      // Form them into a single connected group
+      selectedTiles.forEach(t => t.group = selectedTiles);
+
+      // Find suitable canvas space to place the newly formed word
+      const bRect = board.getBoundingClientRect();
+      const wordWidth = selectedTiles.length * tileSize;
+      
+      // Calculate row placement below existing words or neatly staggered
+      const joinedGroups = getJoinedGroups();
+      let targetY = 36;
+      let targetX = Math.max(16, (bRect.width - wordWidth) / 2);
+
+      if (joinedGroups.length > 0) {
+        // Place below the lowest existing group
+        let lowestY = Math.max(...joinedGroups.map(g => g[0].y));
+        targetY = lowestY + tileSize + 18;
+        if (targetY + tileSize > bRect.height - 130) {
+          // If running out of vertical room, stagger horizontally
+          targetY = 40 + ((joinedGroups.length % 4) * (tileSize + 16));
+          targetX = 24 + ((joinedGroups.length * 15) % 80);
+        }
+      }
+
+      // Animate the selected tiles smoothly to their snapped positions
+      selectedTiles.forEach((tile, i) => {
+        tile.x = targetX + (i * tileSize);
+        tile.y = targetY;
+        tile.element.style.transition = 'transform 0.38s cubic-bezier(0.18, 0.89, 0.32, 1.28)';
+        tile.updateDOM();
+        tile.element.classList.add('snap-pulse');
+
+        setTimeout(() => {
+          tile.element.style.transition = 'box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease';
+          tile.element.classList.remove('snap-pulse');
+        }, 400);
+      });
+
+      refreshVisualGrouping();
+      clampGroup(selectedTiles);
+
+      showToast(`Assembled "${word}"`);
+
+      // Immediately trigger updates: recalculates suggestions with only the remaining unjoined letters!
+      onBoardStateChanged();
+    }
+
+    /* ============================================================
+       STATUS, TAGS & STATE SYNCHRONIZATION
+       ============================================================ */
+    function onBoardStateChanged() {
+      updateLiveStats();
+      updateDetectedWordBadges();
+      updateSuggestionsUI();
+      toggleEmptyState();
+    }
+
+    function updateLiveStats() {
+      const total = tiles.length;
+      const free = getUnjoinedTiles().length;
+      const words = getJoinedGroups().length;
+
+      statTotal.textContent = total;
+      statFree.textContent = free;
+      statWords.textContent = words;
+    }
+
+    function updateDetectedWordBadges() {
+      const groups = getJoinedGroups();
+      wordTagsBar.innerHTML = '';
+
+      if (groups.length === 0) return;
+
+      groups.forEach(group => {
+        const text = group.map(t => t.char).join('');
+        const isValid = DICTIONARY.includes(text);
+
+        const badge = document.createElement('div');
+        badge.className = `px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wider flex items-center gap-1.5 backdrop-blur-md shadow-md border ${
+          isValid 
+            ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' 
+            : 'bg-slate-800/90 border-slate-700/80 text-slate-300'
+        }`;
+        badge.innerHTML = `
+          <span>${text}</span>
+          ${isValid ? '<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i>' : ''}
+        `;
+        wordTagsBar.appendChild(badge);
+      });
+
+      lucide.createIcons();
+    }
+
+    function toggleEmptyState() {
+      if (tiles.length === 0) {
+        emptyState.classList.remove('opacity-0', 'pointer-events-none');
+        emptyState.classList.add('opacity-100');
+      } else {
+        emptyState.classList.add('opacity-0', 'pointer-events-none');
+        emptyState.classList.remove('opacity-100');
+      }
+    }
+
+    function showToast(text) {
+      toastText.textContent = text;
+      toastMessage.classList.remove('opacity-0');
+      toastMessage.classList.add('opacity-100');
+      clearTimeout(toastMessage._timer);
+      toastMessage._timer = setTimeout(() => {
+        toastMessage.classList.remove('opacity-100');
+        toastMessage.classList.add('opacity-0');
+      }, 2200);
+    }
+
+    /* ============================================================
+       BOARD ACTIONS: ADD, SHUFFLE, ARRANGE, CLEAR
+       ============================================================ */
+    function addTiles(inputStr) {
+      const sanitized = inputStr.toUpperCase().replace(/[^A-Z]/g, '');
+      if (!sanitized) return;
+
+      const bRect = board.getBoundingClientRect();
+      const count = sanitized.length;
+      const gap = 8;
+      const totalWidth = count * (tileSize + gap) - gap;
+
+      // Start position centered in board
+      let startX = Math.max(16, (bRect.width - totalWidth) / 2);
+      let startY = Math.max(40, (bRect.height / 2) - tileSize);
+
+      if (tiles.length > 0) {
+        // Spawn slightly staggered so existing tiles aren't obscured
+        startY = Math.min(bRect.height - 140, 50 + (tiles.length * 6) % 180);
+      }
+
+      for (let i = 0; i < count; i++) {
+        const char = sanitized[i];
+        const x = startX + i * (tileSize + gap);
+        const y = startY;
+        const tile = new Tile(char, x, y);
+        tiles.push(tile);
+        tileLayer.appendChild(tile.element);
+      }
+
+      sound.shuffle();
+      clampAllTiles();
+      onBoardStateChanged();
+    }
+
+    function shuffleAllTiles() {
+      if (tiles.length === 0) return;
+      sound.shuffle();
+
+      const bRect = board.getBoundingClientRect();
+      const maxX = Math.max(16, bRect.width - tileSize - 16);
+      const maxY = Math.max(16, bRect.height - tileSize - 100);
+
+      // Randomize free tiles individually; groups stay together and translate to new random spots
+      const seen = new Set();
+      tiles.forEach(t => {
+        if (!seen.has(t.group)) {
+          seen.add(t.group);
+          const g = t.group;
+          const gWidth = g.length * tileSize;
+          const newX = 16 + Math.random() * Math.max(10, (bRect.width - gWidth - 32));
+          const newY = 24 + Math.random() * maxY;
+
+          g.forEach((tile, i) => {
+            tile.x = newX + (i * tileSize);
+            tile.y = newY;
+            tile.element.style.transition = 'transform 0.35s cubic-bezier(0.2, 0.85, 0.4, 1.2)';
+            tile.updateDOM();
+            setTimeout(() => {
+              tile.element.style.transition = 'box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease';
+            }, 360);
+          });
+        }
+      });
+
+      onBoardStateChanged();
+    }
+
+    function arrangeInRows() {
+      if (tiles.length === 0) return;
+      sound.snap();
+
+      const bRect = board.getBoundingClientRect();
+      const gap = 8;
+      const margin = 20;
+      const usableWidth = bRect.width - (margin * 2);
+
+      let currentX = margin;
+      let currentY = 40;
+
+      // Group free tiles together, and separate formed words on their own lines
+      const groups = [];
+      const seen = new Set();
+
+      // Put joined words first
+      tiles.forEach(t => {
+        if (t.group.length > 1 && !seen.has(t.group)) {
+          seen.add(t.group);
+          groups.push(t.group);
+        }
+      });
+
+      // Free tiles individual
+      tiles.forEach(t => {
+        if (t.group.length === 1) {
+          groups.push([t]);
+        }
+      });
+
+      groups.forEach(g => {
+        const gWidth = g.length * (g.length > 1 ? tileSize : tileSize + gap);
+        if (currentX + gWidth > usableWidth && currentX > margin) {
+          currentX = margin;
+          currentY += tileSize + 14;
+        }
+
+        g.forEach((tile, i) => {
+          tile.x = currentX + (i * tileSize);
+          tile.y = currentY;
+          tile.element.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+          tile.updateDOM();
+          setTimeout(() => {
+            tile.element.style.transition = 'box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease';
+          }, 420);
+        });
+
+        currentX += gWidth + (g.length > 1 ? 16 : gap);
+      });
+
+      onBoardStateChanged();
+    }
+
+    function clearAll() {
+      tiles.forEach(t => t.element.remove());
+      tiles = [];
+      letterInput.value = '';
+      hideSnapGuide();
+      onBoardStateChanged();
+    }
+
+    /* ============================================================
+       EVENT WIRING
+       ============================================================ */
+    function handleGenerate() {
+      const text = letterInput.value.trim();
+      if (text) {
+        addTiles(text);
+        letterInput.value = '';
+      }
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', handleGenerate);
+    letterInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleGenerate();
+    });
+
+    document.getElementById('inputClearBtn').addEventListener('click', () => {
+      letterInput.value = '';
+      letterInput.focus();
+    });
+
+    document.getElementById('shuffleBtn').addEventListener('click', shuffleAllTiles);
+    document.getElementById('arrangeBtn').addEventListener('click', arrangeInRows);
+    document.getElementById('splitAllBtn').addEventListener('click', splitAllGroups);
+    document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+    // Hint Toggle (? button)
+    document.getElementById('hintToggleBtn').addEventListener('click', () => {
+      toggleHintShelf();
+    });
+    document.getElementById('closeShelfBtn').addEventListener('click', () => {
+      toggleHintShelf(false);
+    });
+
+    // Sound Toggle
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const soundLabel = document.getElementById('soundLabel');
+    const soundIcon = document.getElementById('soundIcon');
+    soundToggleBtn.addEventListener('click', () => {
+      sound.muted = !sound.muted;
+      soundLabel.textContent = sound.muted ? 'Sound Off' : 'Sound On';
+      soundIcon.setAttribute('data-lucide', sound.muted ? 'volume-x' : 'volume-2');
+      lucide.createIcons();
+    });
+
+    // Preset helper
+    window.loadWord = function(word) {
+      clearAll();
+      addTiles(word);
+      toggleHintShelf(true);
+    };
+
+    // Initial setup with an inspiring starter word
+    window.addEventListener('load', () => {
+      addTiles('RESCUE');
+      toggleHintShelf(true);
+    });
+  </script>
+</body>
+</html>
