@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0b0f19">
   <title>Interval Timer</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -14,8 +14,20 @@
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: #0b0f19;
     }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
     #phasePanel {
       transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+    #phasePanel[data-phase="prepare"] {
+      background-color: rgb(69 26 3 / 0.55);
+      border-color: rgb(245 158 11 / 0.4);
     }
     #phasePanel[data-phase="work"] {
       background-color: rgb(76 5 25 / 0.55);
@@ -29,68 +41,146 @@
       background-color: rgb(30 27 75 / 0.6);
       border-color: rgb(129 140 248 / 0.4);
     }
+
+    /* Clock ring */
+    .clock {
+      position: relative;
+      width: min(16rem, 72vw);
+      aspect-ratio: 1;
+      margin: 0 auto;
+    }
+    .clock svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .clock-track {
+      stroke: rgb(148 163 184 / 0.15);
+    }
+    .clock-progress {
+      stroke: #818cf8;
+      stroke-linecap: round;
+      transition: stroke 0.25s ease;
+    }
+    #phasePanel[data-phase="prepare"] .clock-progress { stroke: #f59e0b; }
+    #phasePanel[data-phase="work"] .clock-progress { stroke: #f43f5e; }
+    #phasePanel[data-phase="rest"] .clock-progress { stroke: #10b981; }
+
+    /* Full-screen running view */
+    #runner.is-running {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin: 0;
+      padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+      background-color: #0b0f19;
+    }
+    #runner.is-running #phasePanel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    #runner.is-running .clock {
+      width: min(88vw, 72vh);
+      width: min(88vw, 72dvh);
+    }
+    #runner.is-running #timeDisplay {
+      font-size: clamp(3rem, 15vmin, 9rem);
+    }
+    #runner.is-running #phaseLabel,
+    #runner.is-running #repDisplay {
+      font-size: clamp(0.875rem, 3.5vmin, 1.5rem);
+    }
+    #runner.is-running #runnerControls {
+      margin-top: 0;
+    }
   </style>
 </head>
 <body class="min-h-screen text-slate-100">
-  <main class="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5 py-8 sm:px-8 sm:py-12">
-    <header class="mb-8 flex items-center justify-between gap-4">
+  <header class="w-full px-4 pt-3 pb-2 flex flex-col gap-2.5 shrink-0">
+    <div class="flex items-center justify-between gap-4">
       <div>
         <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-400">pheufr.github.io</p>
         <h1 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">Interval Timer</h1>
       </div>
-      <a href="./index.html" class="rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-700 hover:text-white">All apps</a>
-    </header>
+      <a href="./index.html" class="shrink-0 rounded-lg border border-slate-800 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-700 hover:text-white">All apps</a>
+    </div>
+  </header>
 
-    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-7">
-      <form id="timerForm" class="grid gap-4 sm:grid-cols-3">
-        <label class="text-sm font-medium text-slate-300">
-          Work time
-          <span class="mt-2 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/70 px-3">
-            <input id="workTime" class="w-full bg-transparent py-2.5 text-white outline-none" type="number" min="1" max="3600" value="30" required>
+  <main class="mx-auto w-full max-w-3xl px-4 pb-8 pt-2">
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-6">
+      <form id="timerForm" class="grid grid-cols-3 gap-2 sm:gap-4">
+        <label class="min-w-0 text-xs font-medium text-slate-300 sm:text-sm">
+          Work
+          <span class="mt-1.5 flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/70 px-2 sm:px-3">
+            <input id="workTime" class="w-full min-w-0 bg-transparent py-2 text-white outline-none" type="number" inputmode="numeric" min="1" max="3600" value="30" required>
             <span class="text-xs text-slate-500">sec</span>
           </span>
         </label>
-        <label class="text-sm font-medium text-slate-300">
-          Rest time
-          <span class="mt-2 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/70 px-3">
-            <input id="restTime" class="w-full bg-transparent py-2.5 text-white outline-none" type="number" min="0" max="3600" value="15" required>
+        <label class="min-w-0 text-xs font-medium text-slate-300 sm:text-sm">
+          Rest
+          <span class="mt-1.5 flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/70 px-2 sm:px-3">
+            <input id="restTime" class="w-full min-w-0 bg-transparent py-2 text-white outline-none" type="number" inputmode="numeric" min="0" max="3600" value="15" required>
             <span class="text-xs text-slate-500">sec</span>
           </span>
         </label>
-        <label class="text-sm font-medium text-slate-300">
+        <label class="min-w-0 text-xs font-medium text-slate-300 sm:text-sm">
           Reps
-          <span class="mt-2 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/70 px-3">
-            <input id="reps" class="w-full bg-transparent py-2.5 text-white outline-none" type="number" min="1" max="99" value="5" required>
-            <span class="text-xs text-slate-500">rounds</span>
+          <span class="mt-1.5 flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/70 px-2 sm:px-3">
+            <input id="reps" class="w-full min-w-0 bg-transparent py-2 text-white outline-none" type="number" inputmode="numeric" min="1" max="99" value="5" required>
+            <span class="text-xs text-slate-500">reps</span>
           </span>
         </label>
       </form>
 
-      <div id="phasePanel" data-phase="idle" class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 px-5 py-10 text-center sm:py-14">
-        <p id="phaseLabel" class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300" role="status" aria-live="polite">Ready</p>
-        <p id="timeDisplay" class="mt-3 font-mono text-6xl font-semibold tracking-tight text-white sm:text-7xl" aria-live="off">00:30</p>
-        <p id="repDisplay" class="mt-3 text-sm text-slate-400">Ready for 5 rounds</p>
-      </div>
+      <div id="runner" class="mt-5">
+        <div id="phasePanel" data-phase="idle" class="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-6 text-center">
+          <div class="clock">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="clock-track" cx="50" cy="50" r="46" fill="none" stroke-width="4"></circle>
+              <circle id="clockProgress" class="clock-progress" cx="50" cy="50" r="46" fill="none" stroke-width="4"></circle>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <p id="phaseLabel" class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300" role="status" aria-live="polite">Ready</p>
+              <p id="timeDisplay" class="mt-2 font-mono text-5xl font-semibold tracking-tight text-white sm:text-6xl" aria-live="off">00:30</p>
+              <p id="repDisplay" class="mt-2 text-sm text-slate-400">Ready for 5 rounds</p>
+            </div>
+          </div>
+        </div>
 
-      <div class="mt-5 flex flex-wrap justify-center gap-3">
-        <button id="startButton" type="button" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-95">Start timer</button>
-        <button id="pauseButton" type="button" class="hidden rounded-lg border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 active:scale-95">Pause</button>
-        <button id="resetButton" type="button" class="rounded-lg border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white active:scale-95">Reset</button>
+        <div id="runnerControls" class="mt-5 flex flex-wrap justify-center gap-3">
+          <button id="startButton" type="button" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-95">Start timer</button>
+          <button id="pauseButton" type="button" class="hidden rounded-lg border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 active:scale-95">Pause</button>
+          <button id="resetButton" type="button" class="rounded-lg border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white active:scale-95">Reset</button>
+        </div>
       </div>
-      <p class="mt-5 text-center text-xs leading-5 text-slate-500">Each rep includes a work interval, followed by a rest interval except after the final rep.</p>
+      <p class="mt-5 text-center text-xs leading-5 text-slate-500">A 5 second countdown precedes the first rep. Each rep includes a work interval, followed by a rest interval except after the final rep.</p>
     </section>
   </main>
 
   <script>
+    const PREPARE_MS = 5000;
+    const COUNTDOWN_SECONDS = 5;
+    const RING_LENGTH = 2 * Math.PI * 46;
+
     const form = document.getElementById('timerForm');
     const inputs = [...form.querySelectorAll('input')];
     const workInput = document.getElementById('workTime');
     const restInput = document.getElementById('restTime');
     const repsInput = document.getElementById('reps');
+    const runner = document.getElementById('runner');
     const phasePanel = document.getElementById('phasePanel');
     const phaseLabel = document.getElementById('phaseLabel');
     const timeDisplay = document.getElementById('timeDisplay');
     const repDisplay = document.getElementById('repDisplay');
+    const clockProgress = document.getElementById('clockProgress');
     const startButton = document.getElementById('startButton');
     const pauseButton = document.getElementById('pauseButton');
     const resetButton = document.getElementById('resetButton');
@@ -100,35 +190,140 @@
     let currentRep = 1;
     let totalReps = 5;
     let remainingMs = 30000;
+    let phaseDurationMs = 30000;
     let endsAt = 0;
     let isPaused = false;
+    let lastSecond = 0;
+    let audioContext;
+    let wakeLock = null;
+
+    clockProgress.style.strokeDasharray = `${RING_LENGTH} ${RING_LENGTH}`;
 
     function formatTime(milliseconds) {
       const seconds = Math.ceil(Math.max(0, milliseconds) / 1000);
       return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
     }
 
+    // --- Audio ---
+    function unlockAudio() {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return;
+      if (!audioContext) audioContext = new AudioCtor();
+      if (audioContext.state === 'suspended') audioContext.resume();
+    }
+
+    function beep(frequency, duration, delay = 0) {
+      if (!audioContext) return;
+      const start = audioContext.currentTime + delay;
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.4, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.02);
+    }
+
+    const countdownBeep = () => beep(880, 0.15);
+    const phaseBeep = () => beep(1320, 0.5);
+    const completeBeep = () => { beep(1320, 0.2); beep(1320, 0.2, 0.25); beep(1760, 0.6, 0.5); };
+
+    // --- Wake lock & full screen ---
+    async function requestWakeLock() {
+      if (!('wakeLock' in navigator) || wakeLock || document.visibilityState !== 'visible') return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      } catch (error) {
+        wakeLock = null;
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+        wakeLock = null;
+      }
+    }
+
+    function isTimerActive() {
+      return (phase === 'prepare' || phase === 'work' || phase === 'rest') && !isPaused;
+    }
+
+    function enterFullscreen() {
+      const root = document.documentElement;
+      const request = root.requestFullscreen || root.webkitRequestFullscreen;
+      if (request && !(document.fullscreenElement || document.webkitFullscreenElement)) {
+        try {
+          const result = request.call(root);
+          if (result && result.catch) result.catch(() => {});
+        } catch (error) { /* unsupported */ }
+      }
+    }
+
+    function exitFullscreen() {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) {
+        try {
+          const result = exit.call(document);
+          if (result && result.catch) result.catch(() => {});
+        } catch (error) { /* unsupported */ }
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isTimerActive()) requestWakeLock();
+    });
+
+    // --- Rendering ---
+    function renderClock() {
+      const fraction = phase === 'idle'
+        ? 1
+        : phaseDurationMs > 0 ? Math.min(1, Math.max(0, remainingMs / phaseDurationMs)) : 0;
+      const remainingLength = RING_LENGTH * fraction;
+      clockProgress.style.strokeDasharray = `${remainingLength} ${RING_LENGTH}`;
+      clockProgress.style.strokeDashoffset = `${-(RING_LENGTH - remainingLength)}`;
+      clockProgress.style.opacity = fraction > 0 ? '1' : '0';
+    }
+
     function render() {
       phasePanel.dataset.phase = phase;
+      runner.classList.toggle('is-running', phase !== 'idle');
       timeDisplay.textContent = formatTime(remainingMs);
       repDisplay.textContent = phase === 'idle'
         ? `Ready for ${repsInput.value || 1} rounds`
         : phase === 'complete'
           ? `${totalReps} rounds complete`
-          : `Rep ${currentRep} of ${totalReps}`;
+          : phase === 'prepare'
+            ? `Starting ${totalReps} rounds`
+            : `Rep ${currentRep} of ${totalReps}`;
       phaseLabel.textContent = isPaused
         ? 'Paused'
-        : phase === 'work'
-        ? 'Work'
-        : phase === 'rest'
-          ? 'Rest'
-          : phase === 'complete'
-            ? 'Complete'
-            : 'Ready';
+        : phase === 'prepare'
+          ? 'Get ready'
+          : phase === 'work'
+            ? 'Work'
+            : phase === 'rest'
+              ? 'Rest'
+              : phase === 'complete'
+                ? 'Complete'
+                : 'Ready';
       startButton.classList.toggle('hidden', phase !== 'idle');
       pauseButton.classList.toggle('hidden', phase === 'idle' || phase === 'complete');
       pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+      resetButton.textContent = phase === 'complete' ? 'Done' : 'Reset';
       inputs.forEach(input => { input.disabled = phase !== 'idle'; });
+      renderClock();
+    }
+
+    // --- Timer logic ---
+    function setPhase(nextPhase, durationMs) {
+      phase = nextPhase;
+      phaseDurationMs = durationMs;
+      remainingMs = durationMs;
     }
 
     function endTimer() {
@@ -137,6 +332,8 @@
       phase = 'complete';
       remainingMs = 0;
       isPaused = false;
+      releaseWakeLock();
+      completeBeep();
       render();
     }
 
@@ -144,25 +341,27 @@
       const now = performance.now();
       do {
         const previousEnd = endsAt;
-        if (phase === 'work') {
+        if (phase === 'prepare') {
+          setPhase('work', Number(workInput.value) * 1000);
+        } else if (phase === 'work') {
           if (currentRep < totalReps && Number(restInput.value) > 0) {
-            phase = 'rest';
-            remainingMs = Number(restInput.value) * 1000;
+            setPhase('rest', Number(restInput.value) * 1000);
           } else if (currentRep < totalReps) {
             currentRep++;
-            remainingMs = Number(workInput.value) * 1000;
+            setPhase('work', Number(workInput.value) * 1000);
           } else {
             endTimer();
             return;
           }
         } else {
           currentRep++;
-          phase = 'work';
-          remainingMs = Number(workInput.value) * 1000;
+          setPhase('work', Number(workInput.value) * 1000);
         }
         endsAt = previousEnd + remainingMs;
         remainingMs = endsAt - now;
       } while (remainingMs <= 0);
+      lastSecond = Math.ceil(remainingMs / 1000);
+      phaseBeep();
       render();
     }
 
@@ -170,34 +369,45 @@
       remainingMs = endsAt - performance.now();
       if (remainingMs <= 0) {
         advancePhase();
-      } else {
-        timeDisplay.textContent = formatTime(remainingMs);
+        return;
       }
+      const second = Math.ceil(remainingMs / 1000);
+      if (second < lastSecond && second <= COUNTDOWN_SECONDS) countdownBeep();
+      lastSecond = second;
+      timeDisplay.textContent = formatTime(remainingMs);
+      renderClock();
     }
 
     function startTimer() {
       if (!form.reportValidity()) return;
+      unlockAudio();
+      enterFullscreen();
       totalReps = Number(repsInput.value);
       currentRep = 1;
-      phase = 'work';
       isPaused = false;
-      remainingMs = Number(workInput.value) * 1000;
+      setPhase('prepare', PREPARE_MS);
+      lastSecond = Math.ceil(PREPARE_MS / 1000);
       endsAt = performance.now() + remainingMs;
+      countdownBeep();
+      requestWakeLock();
       render();
-      timerId = setInterval(tick, 100);
+      timerId = setInterval(tick, 50);
     }
 
     startButton.addEventListener('click', startTimer);
     pauseButton.addEventListener('click', () => {
       if (isPaused) {
+        unlockAudio();
         isPaused = false;
         endsAt = performance.now() + remainingMs;
-        timerId = setInterval(tick, 100);
+        timerId = setInterval(tick, 50);
+        requestWakeLock();
       } else {
         remainingMs = Math.max(0, endsAt - performance.now());
         clearInterval(timerId);
         timerId = undefined;
         isPaused = true;
+        releaseWakeLock();
       }
       render();
     });
@@ -207,10 +417,19 @@
       phase = 'idle';
       currentRep = 1;
       remainingMs = Number(workInput.value || 30) * 1000;
+      phaseDurationMs = remainingMs;
       isPaused = false;
+      releaseWakeLock();
+      exitFullscreen();
       render();
     });
-    inputs.forEach(input => input.addEventListener('input', render));
+    inputs.forEach(input => input.addEventListener('input', () => {
+      if (phase === 'idle') {
+        remainingMs = Number(workInput.value || 30) * 1000;
+        phaseDurationMs = remainingMs;
+      }
+      render();
+    }));
     render();
   </script>
 </body>
