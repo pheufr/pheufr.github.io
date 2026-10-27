@@ -272,9 +272,20 @@ input[type="number"]::-webkit-outer-spin-button {
   border-color: var(--complete-border);
 }
 
+/* Interval timer: fill the viewport below the header without scrolling */
+body.interval {
+  height: 100vh;
+  height: 100dvh;
+}
+body.interval #phasePanel {
+  container-type: size;
+  min-height: 13rem;
+}
+
 .clock {
   position: relative;
-  width: min(12rem, 60vw);
+  width: min(16rem, 72vw);
+  width: min(100cqw, 100cqh, 28rem);
   aspect-ratio: 1;
   margin: 0 auto;
 }
