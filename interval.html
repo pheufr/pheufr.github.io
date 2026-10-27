@@ -25,7 +25,7 @@
   </header>
 
   <main class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 pb-2 pt-2">
-    <section class="flex flex-1 flex-col rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-6">
+    <section class="flex flex-1 flex-col rounded-2xl border border-slate-800 bg-slate-900/70 p-3 sm:p-6">
       <form id="timerForm" class="grid grid-cols-3 gap-2 sm:gap-4">
         <div class="col-span-3 flex items-start gap-2 sm:gap-4">
           <div id="timerMode" class="inline-flex shrink-0 rounded-lg border border-slate-700 bg-slate-950" role="group" aria-label="Timer mode">
@@ -66,8 +66,8 @@
         </label>
       </form>
 
-      <div id="runner" class="mt-5 flex flex-1 flex-col">
-        <div id="phasePanel" data-phase="idle" class="flex flex-1 items-center justify-center rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-6 text-center">
+      <div id="runner" class="mt-3 flex flex-1 flex-col">
+        <div id="phasePanel" data-phase="idle" class="flex flex-1 items-center justify-center rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-center">
           <div class="clock">
             <svg viewBox="0 0 100 100" aria-hidden="true">
               <circle class="clock-track" cx="50" cy="50" r="46" fill="none" stroke-width="4"></circle>
@@ -81,15 +81,13 @@
           </div>
         </div>
 
-        <div id="runnerControls" class="mt-5 flex flex-wrap justify-center gap-3">
+        <div id="runnerControls" class="mt-3 flex flex-wrap justify-center gap-3">
           <button id="startButton" type="button" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-95">Start timer</button>
           <button id="pauseButton" type="button" class="hidden rounded-lg border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-heading transition hover:bg-slate-700 active:scale-95">Pause</button>
           <button id="restartButton" type="button" class="hidden rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 active:scale-95">Restart</button>
           <button id="resetButton" type="button" class="rounded-lg border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-heading active:scale-95">Reset</button>
         </div>
       </div>
-      <p id="intervalHelp" class="mt-5 text-center text-xs leading-5 text-slate-500">A 5 second countdown precedes the first rep. Each rep includes a work interval, followed by a rest interval except after the final rep.</p>
-      <p id="restHelp" class="hidden mt-5 text-center text-xs leading-5 text-slate-500">Rest starts immediately. After completion, the timer counts up until you restart or finish.</p>
     </section>
   </main>
 
@@ -390,10 +388,10 @@
       mode = button.dataset.mode;
       restInput.value = restTimes[mode];
       restInput.min = mode === 'rest' ? '1' : '0';
-      ['workField', 'repsField', 'intervalPresets', 'intervalHelp'].forEach(id => {
+      ['workField', 'repsField', 'intervalPresets'].forEach(id => {
         document.getElementById(id).classList.toggle('hidden', mode === 'rest');
       });
-      ['restPresets', 'restHelp'].forEach(id => {
+      ['restPresets'].forEach(id => {
         document.getElementById(id).classList.toggle('hidden', mode !== 'rest');
       });
       document.getElementById('restField').classList.toggle('col-span-3', mode === 'rest');
