@@ -27,22 +27,21 @@
   <main class="mx-auto w-full max-w-3xl px-4 pb-8 pt-2">
     <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-6">
       <form id="timerForm" class="grid grid-cols-3 gap-2 sm:gap-4">
-        <label class="col-span-3 text-sm font-medium text-slate-300">
-          Mode
-          <select id="timerMode" class="ml-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-heading">
-            <option value="interval">Interval</option>
-            <option value="rest">Rest</option>
-          </select>
-        </label>
-        <div id="intervalPresets" class="col-span-3 flex flex-wrap gap-2" role="group" aria-label="Interval quick buttons">
-          <button type="button" data-work="30" data-reps="15" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">30/15x15</button>
-          <button type="button" data-work="30" data-reps="5" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">30/15x5</button>
-          <button type="button" data-work="45" data-reps="5" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">45/15x5</button>
-        </div>
-        <div id="restPresets" class="hidden col-span-3 flex flex-wrap gap-2" role="group" aria-label="Rest quick buttons">
-          <button type="button" data-rest="30" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">30s</button>
-          <button type="button" data-rest="45" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">45s</button>
-          <button type="button" data-rest="60" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">60s</button>
+        <div class="col-span-3 flex items-start gap-2 sm:gap-4">
+          <div id="timerMode" class="inline-flex shrink-0 rounded-lg border border-slate-700 bg-slate-950" role="group" aria-label="Timer mode">
+            <button type="button" data-mode="interval" aria-pressed="true" class="rounded-l-md px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 aria-pressed:bg-indigo-600 aria-pressed:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 disabled:opacity-50">Interval</button>
+            <button type="button" data-mode="rest" aria-pressed="false" class="rounded-r-md border-l border-slate-700 px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 aria-pressed:bg-indigo-600 aria-pressed:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 disabled:opacity-50">Rest</button>
+          </div>
+          <div id="intervalPresets" class="min-w-0 flex flex-wrap gap-2" role="group" aria-label="Interval quick buttons">
+            <button type="button" data-work="30" data-reps="15" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">30/15x15</button>
+            <button type="button" data-work="30" data-reps="5" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">30/15x5</button>
+            <button type="button" data-work="45" data-reps="5" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">45/15x5</button>
+          </div>
+          <div id="restPresets" class="hidden min-w-0 flex flex-wrap gap-2" role="group" aria-label="Rest quick buttons">
+            <button type="button" data-rest="30" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">30s</button>
+            <button type="button" data-rest="45" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">45s</button>
+            <button type="button" data-rest="60" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">60s</button>
+          </div>
         </div>
         <label id="workField" class="min-w-0 text-xs font-medium text-slate-300 sm:text-sm">
           Work
@@ -104,8 +103,8 @@
     const workInput = document.getElementById('workTime');
     const restInput = document.getElementById('restTime');
     const repsInput = document.getElementById('reps');
-    const modeInput = document.getElementById('timerMode');
-    const presetButtons = [...form.querySelectorAll('button')];
+    const modeButtons = [...form.querySelectorAll('[data-mode]')];
+    const presetButtons = [...form.querySelectorAll('[data-work], [data-rest]')];
     const runner = document.getElementById('runner');
     const phasePanel = document.getElementById('phasePanel');
     const phaseLabel = document.getElementById('phaseLabel');
@@ -251,7 +250,10 @@
       restartButton.classList.toggle('hidden', phase === 'idle');
       pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
       resetButton.textContent = phase === 'complete' ? 'Done' : 'Reset';
-      modeInput.disabled = phase !== 'idle';
+      modeButtons.forEach(button => {
+        button.disabled = phase !== 'idle';
+        button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+      });
       inputs.forEach(input => {
         input.disabled = phase !== 'idle' || (mode === 'rest' && input !== restInput);
       });
@@ -382,9 +384,10 @@
       render();
     }
 
-    modeInput.addEventListener('change', () => {
+    modeButtons.forEach(button => button.addEventListener('click', () => {
+      if (phase !== 'idle' || button.dataset.mode === mode) return;
       restTimes[mode] = restInput.value;
-      mode = modeInput.value;
+      mode = button.dataset.mode;
       restInput.value = restTimes[mode];
       restInput.min = mode === 'rest' ? '1' : '0';
       ['workField', 'repsField', 'intervalPresets', 'intervalHelp'].forEach(id => {
@@ -395,7 +398,7 @@
       });
       document.getElementById('restField').classList.toggle('col-span-3', mode === 'rest');
       updatePreview();
-    });
+    }));
     presetButtons.forEach(button => button.addEventListener('click', () => {
       if (mode === 'interval') {
         workInput.value = button.dataset.work;
